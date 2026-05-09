@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "279809808505",
+    "project_id": "summer-school-2f0a7",
+    "storage_bucket": "summer-school-2f0a7.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:279809808505:android:332cfedc3db1aaa3df1ca8",
+        "android_client_info": {
+          "package_name": "com.example.summerschool"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDEyC8o0fWcpM0utDvrH-eizFD-QT6jW8c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
