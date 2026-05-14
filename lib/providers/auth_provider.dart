@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -28,6 +29,19 @@ class AuthProvider extends ChangeNotifier {
   bool get isMemberManager => _user?.role == UserRole.memberManager;
   bool get isMember => _user?.role == UserRole.member;
 
+  static String normalizeStage(String stage) =>
+      stage.replaceAll(' ', '').toLowerCase();
+
+  void _logUserState(String source, UserModel? user) {
+    if (user == null) {
+      debugPrint('[AuthProvider][$source] currentUser = null');
+      return;
+    }
+    debugPrint(
+      '[AuthProvider][$source] uid=${user.id} role=${user.role.value} stage=${user.stage} stage_norm=${normalizeStage(user.stage)}',
+    );
+  }
+
   Future<void> initialize() async {
     _setLoading(true);
     _errorMessage = null;
@@ -36,10 +50,12 @@ class AuthProvider extends ChangeNotifier {
       final firebaseUser = _firebaseAuth.currentUser;
       if (firebaseUser == null) {
         _user = null;
+        _logUserState('initialize', null);
         return;
       }
 
       _user = await _fetchOrCreateFirestoreUser(firebaseUser);
+      _logUserState('initialize', _user);
     } on FirebaseAuthException catch (error) {
       _errorMessage = _authErrorMessage(error);
       _user = null;
@@ -67,6 +83,7 @@ class AuthProvider extends ChangeNotifier {
       }
 
       _user = await _fetchOrCreateFirestoreUser(firebaseUser);
+      _logUserState('login', _user);
       return true;
     } on FirebaseAuthException catch (error) {
       _errorMessage = _authErrorMessage(error);
@@ -119,6 +136,7 @@ class AuthProvider extends ChangeNotifier {
   Future<UserModel> _fetchOrCreateFirestoreUser(User firebaseUser) async {
     final existingUser = await _firestoreUserService.getUser(firebaseUser.uid);
     if (existingUser != null) {
+      _logUserState('fetchExisting', existingUser);
       return existingUser;
     }
 
@@ -138,6 +156,7 @@ class AuthProvider extends ChangeNotifier {
     );
 
     await _firestoreUserService.createUser(newUser);
+    _logUserState('createNew', newUser);
     return newUser;
   }
 

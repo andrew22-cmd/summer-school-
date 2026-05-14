@@ -4,6 +4,8 @@ class LocalStorageService {
   static const String _onboardingKey = 'onboarding_completed';
   static const String _rememberMeKey = 'remember_me';
   static const String _savedEmailKey = 'saved_email';
+  static const String _classMembersStageNormMigratedKey =
+      'class_members_stage_norm_migrated_v1';
 
   Future<bool> getOnboardingCompleted() async {
     final prefs = await SharedPreferences.getInstance();
@@ -37,5 +39,15 @@ class LocalStorageService {
     } else {
       await prefs.setString(_savedEmailKey, email);
     }
+  }
+
+  Future<bool> getClassMembersStageNormMigrated() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_classMembersStageNormMigratedKey) ?? false;
+  }
+
+  Future<void> setClassMembersStageNormMigrated(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_classMembersStageNormMigratedKey, value);
   }
 }
