@@ -139,7 +139,29 @@ class _MenuCard extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        onTap: () {},
+        onTap: () {
+          if (item.title == 'Profile') {
+            Navigator.pushNamed(context, AppRoutes.profile);
+            return;
+          }
+          if (item.title == 'Events') {
+            Navigator.pushNamed(context, AppRoutes.events);
+            return;
+          }
+          if (item.title == 'Notes') {
+            Navigator.pushNamed(context, AppRoutes.spiritualNotebook);
+            return;
+          }
+          if (item.title == 'Class') {
+            Navigator.pushNamed(context, AppRoutes.classMembers);
+            return;
+          }
+          if (item.title == 'Points') {
+            Navigator.pushNamed(context, AppRoutes.points);
+            return;
+          }
+          // TODO: wire other menu actions
+        },
         child: Ink(
           decoration: BoxDecoration(
             color: Colors.white,

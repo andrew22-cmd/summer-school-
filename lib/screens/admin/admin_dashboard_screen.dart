@@ -433,6 +433,32 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   color: Theme.of(context).colorScheme.outlineVariant,
                 ),
               ),
+              child: ListTile(
+                leading: CircleAvatar(
+                  child: Icon(
+                    Icons.school_rounded,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+                title: const Text('Class Students'),
+                subtitle: const Text(
+                  'Manage classroom records in class_members',
+                ),
+                trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 18),
+                onTap: () {
+                  Navigator.pushNamed(context, AppRoutes.adminClassMembers);
+                },
+              ),
+            ),
+            const SizedBox(height: 12),
+            Card(
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(
+                  color: Theme.of(context).colorScheme.outlineVariant,
+                ),
+              ),
               child: Padding(
                 padding: const EdgeInsets.all(10),
                 child: TextField(

@@ -105,7 +105,25 @@ class _ManagerMenuCard extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () {},
+        onTap: () {
+          if (item.title == 'Profile') {
+            Navigator.pushNamed(context, AppRoutes.profile);
+            return;
+          }
+          if (item.title == 'Add Event') {
+            Navigator.pushNamed(context, AppRoutes.manageEvents);
+            return;
+          }
+          if (item.title == 'Events') {
+            Navigator.pushNamed(context, AppRoutes.events);
+            return;
+          }
+          if (item.title == 'Notes') {
+            Navigator.pushNamed(context, AppRoutes.spiritualNotebook);
+            return;
+          }
+          // TODO: implement other manager menu actions
+        },
         borderRadius: BorderRadius.circular(16),
         child: Ink(
           padding: const EdgeInsets.all(14),
