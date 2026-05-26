@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:summerschool/models/class_member_model.dart';
-import 'package:summerschool/models/points_history_model.dart';
+import 'package:summerschool/models/student_points_record_model.dart';
 import 'package:summerschool/services/points_service.dart';
 
 class PointsProvider extends ChangeNotifier {
@@ -12,8 +12,8 @@ class PointsProvider extends ChangeNotifier {
   final PointsService _service;
 
   List<ClassMemberModel> _students = [];
-  List<PointsHistoryModel> _history = [];
-  final Map<String, PointsHistoryModel> _latestHistoryByStudentId = {};
+  List<StudentPointsRecordModel> _history = [];
+  final Map<String, StudentPointsRecordModel> _latestHistoryByStudentId = {};
   final Map<String, int> _currentTotalByStudentId = {};
   bool _isLoadingStudents = false;
   bool _isLoadingHistory = false;
@@ -21,8 +21,8 @@ class PointsProvider extends ChangeNotifier {
   String _search = '';
 
   StreamSubscription<List<ClassMemberModel>>? _studentsSub;
-  StreamSubscription<List<PointsHistoryModel>>? _totalsSub;
-  StreamSubscription<List<PointsHistoryModel>>? _historySub;
+  StreamSubscription<List<StudentPointsRecordModel>>? _totalsSub;
+  StreamSubscription<List<StudentPointsRecordModel>>? _historySub;
 
   List<ClassMemberModel> get allStudents => _students;
 
@@ -32,7 +32,8 @@ class PointsProvider extends ChangeNotifier {
     return _students.where((s) => s.name.toLowerCase().contains(q)).toList();
   }
 
-  List<PointsHistoryModel> get history => _history;
+  List<StudentPointsRecordModel> get history => _history;
+  List<StudentPointsRecordModel> get records => _history;
   bool get isLoadingStudents => _isLoadingStudents;
   bool get isLoadingHistory => _isLoadingHistory;
   String? get error => _error;
@@ -41,7 +42,7 @@ class PointsProvider extends ChangeNotifier {
     return _currentTotalByStudentId[studentId];
   }
 
-  PointsHistoryModel? latestHistoryForStudent(String studentId) {
+  StudentPointsRecordModel? latestHistoryForStudent(String studentId) {
     return _latestHistoryByStudentId[studentId];
   }
 
@@ -113,7 +114,7 @@ class PointsProvider extends ChangeNotifier {
             );
             for (final entry in list) {
               debugPrint(
-                '[STREAM] history operationType="${entry.operationType}" points=${entry.points} totalPointsAfterOperation=${entry.totalPointsAfterOperation}',
+                '[STREAM] history operationType="${entry.operationType}" points=${entry.points} totalPointsAfter=${entry.totalPointsAfter}',
               );
             }
             _history = list;
@@ -159,7 +160,7 @@ class PointsProvider extends ChangeNotifier {
             );
             for (final entry in list) {
               debugPrint(
-                '[STREAM] totals entry studentId="${entry.studentId}" operationType="${entry.operationType}" totalPointsAfterOperation=${entry.totalPointsAfterOperation}',
+                '[STREAM] totals entry studentId="${entry.studentId}" operationType="${entry.operationType}" totalPointsAfter=${entry.totalPointsAfter}',
               );
             }
             _history = list;
@@ -191,7 +192,8 @@ class PointsProvider extends ChangeNotifier {
     required ClassMemberModel student,
     required int points,
     required String reason,
-    required String createdBy,
+    required String createdByUserId,
+    required String createdByName,
   }) async {
     debugPrint('[PointsProvider.addPoints] Calling service.addPoints()...');
     try {
@@ -199,7 +201,8 @@ class PointsProvider extends ChangeNotifier {
         student: student,
         points: points,
         reason: reason,
-        createdBy: createdBy,
+        createdByUserId: createdByUserId,
+        createdByName: createdByName,
       );
       debugPrint('[PointsProvider.addPoints] ✓ Service completed successfully');
     } catch (e) {
@@ -212,7 +215,8 @@ class PointsProvider extends ChangeNotifier {
     required ClassMemberModel student,
     required int points,
     required String reason,
-    required String createdBy,
+    required String createdByUserId,
+    required String createdByName,
   }) async {
     debugPrint(
       '[PointsProvider.removePoints] Calling service.removePoints()...',
@@ -222,7 +226,8 @@ class PointsProvider extends ChangeNotifier {
         student: student,
         points: points,
         reason: reason,
-        createdBy: createdBy,
+        createdByUserId: createdByUserId,
+        createdByName: createdByName,
       );
       debugPrint(
         '[PointsProvider.removePoints] ✓ Service completed successfully',
@@ -249,7 +254,7 @@ class PointsProvider extends ChangeNotifier {
     debugPrint('[PROVIDER NOTIFY] PointsProvider _isLoadingHistory=$value');
   }
 
-  void _rebuildLatestTotals(List<PointsHistoryModel> list) {
+  void _rebuildLatestTotals(List<StudentPointsRecordModel> list) {
     _latestHistoryByStudentId.clear();
     _currentTotalByStudentId.clear();
 
@@ -257,12 +262,12 @@ class PointsProvider extends ChangeNotifier {
       _latestHistoryByStudentId.putIfAbsent(entry.studentId, () => entry);
       _currentTotalByStudentId.putIfAbsent(
         entry.studentId,
-        () => entry.totalPointsAfterOperation,
+        () => entry.totalPointsAfter,
       );
     }
 
     debugPrint(
-      '[TOTAL POINTS UPDATED] rebuilt live totals for ${_currentTotalByStudentId.length} students from points_history',
+      '[TOTAL POINTS UPDATED] rebuilt live totals for ${_currentTotalByStudentId.length} students from student_points_records',
     );
     for (final e in _currentTotalByStudentId.entries) {
       debugPrint(

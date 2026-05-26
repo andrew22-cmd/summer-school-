@@ -238,11 +238,9 @@ class _PointsScreenState extends State<PointsScreen> {
       context,
       MaterialPageRoute(
         builder: (ctx) => ChangeNotifierProvider<PointsProvider>(
-          create: (_) => PointsProvider(PointsService())
-            ..startListeningHistory(
-              context.read<AuthProvider>().user?.stage ?? '',
-              studentId: student.id,
-            ),
+          create: (_) =>
+              PointsProvider(PointsService())
+                ..startListeningHistory(student.stage, studentId: student.id),
           child: PointsHistoryScreen(student: student),
         ),
       ),

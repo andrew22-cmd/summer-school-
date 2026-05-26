@@ -1,0 +1,25 @@
+{
+  "name": "notifications-backend",
+  "version": "1.0.0",
+  "description": "Node.js backend for Firebase FCM push notifications",
+  "main": "index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node index.js"
+  },
+  "keywords": [
+    "firebase",
+    "fcm",
+    "push-notifications",
+    "express",
+    "firebase-admin"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "firebase-admin": "^13.4.0"
+  }
+}

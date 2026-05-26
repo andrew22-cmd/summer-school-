@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:summerschool/models/class_member_model.dart';
-import 'package:summerschool/models/points_history_model.dart';
+import 'package:summerschool/models/student_points_record_model.dart';
 import 'package:summerschool/services/class_member_service.dart';
 
 /// ╔═══════════════════════════════════════════════════════════════════╗
@@ -33,7 +33,7 @@ import 'package:summerschool/services/class_member_service.dart';
 ///      → Verify totalPoints field is initialized (not missing)
 ///
 ///    If history is empty:
-///      → Check Firestore Console: collections → points_history
+///      → Check Firestore Console: collections → student_points_records
 ///      → Verify history documents are being created
 ///      → Check Provider logs for stream emissions
 ///      → Look for "[READ] HIST" logs showing query results
@@ -45,7 +45,7 @@ import 'package:summerschool/services/class_member_service.dart';
 ///
 /// 5. REQUIRED FIRESTORE SECURITY RULES:
 ///    - class_members: allow update for authenticated users
-///    - points_history: allow create for authenticated users
+///    - student_points_records: allow create for authenticated users
 ///    - Both collections: allow read based on stage filtering
 ///
 class PointsService {
@@ -59,7 +59,7 @@ class PointsService {
   final FirebaseFirestore _firestore;
   final ClassMemberService _classMemberService;
 
-  static const String _historyCollection = 'points_history';
+  static const String _historyCollection = 'student_points_records';
   static String normalizeStage(String stage) =>
       ClassMemberService.normalizeStage(stage);
 
@@ -71,7 +71,7 @@ class PointsService {
     return _classMemberService.getMembersForStage(stage);
   }
 
-  Stream<List<PointsHistoryModel>> watchHistoryForStage(
+  Stream<List<StudentPointsRecordModel>> watchHistoryForStage(
     String stage, {
     String? studentId,
   }) {
@@ -86,9 +86,9 @@ class PointsService {
       final list =
           snap.docs
               .map((d) {
-                final model = PointsHistoryModel.fromMap(d.data());
+                final model = StudentPointsRecordModel.fromMap(d.data());
                 debugPrint(
-                  '[STREAM] history entry operationType="${model.operationType}" points=${model.points} totalPointsAfterOperation=${model.totalPointsAfterOperation}',
+                  '[STREAM] record entry operationType="${model.operationType}" points=${model.points} totalPointsAfter=${model.totalPointsAfter}',
                 );
                 return model;
               })
@@ -96,6 +96,7 @@ class PointsService {
                 final filterId = studentId?.trim() ?? '';
                 return filterId.isEmpty || model.studentId == filterId;
               })
+              .whereType<StudentPointsRecordModel>()
               .toList()
             ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
       debugPrint(
@@ -109,13 +110,15 @@ class PointsService {
     required ClassMemberModel student,
     required int points,
     required String reason,
-    required String createdBy,
+    required String createdByUserId,
+    required String createdByName,
   }) {
     return _applyPoints(
       student: student,
       points: points,
       reason: reason,
-      createdBy: createdBy,
+      createdByUserId: createdByUserId,
+      createdByName: createdByName,
       isAdd: true,
     );
   }
@@ -124,13 +127,15 @@ class PointsService {
     required ClassMemberModel student,
     required int points,
     required String reason,
-    required String createdBy,
+    required String createdByUserId,
+    required String createdByName,
   }) {
     return _applyPoints(
       student: student,
       points: points,
       reason: reason,
-      createdBy: createdBy,
+      createdByUserId: createdByUserId,
+      createdByName: createdByName,
       isAdd: false,
     );
   }
@@ -139,13 +144,17 @@ class PointsService {
     required ClassMemberModel student,
     required int points,
     required String reason,
-    required String createdBy,
+    required String createdByUserId,
+    required String createdByName,
     required bool isAdd,
   }) async {
     final cleanReason = reason.trim();
-    final cleanCreatedBy = createdBy.trim().isEmpty
+    final cleanCreatedByUserId = createdByUserId.trim().isEmpty
         ? 'local_admin'
-        : createdBy.trim();
+        : createdByUserId.trim();
+    final cleanCreatedByName = createdByName.trim().isEmpty
+        ? cleanCreatedByUserId
+        : createdByName.trim();
 
     if (points <= 0) {
       throw Exception('Points must be greater than zero.');
@@ -159,6 +168,8 @@ class PointsService {
     debugPrint('[FIRESTORE_WRITE] studentName=${student.name}');
     debugPrint('[FIRESTORE_WRITE] stage=${student.stage}');
     debugPrint('[FIRESTORE_WRITE] points=$points reason=$cleanReason');
+    debugPrint('[FIRESTORE_WRITE] createdByUserId=$cleanCreatedByUserId');
+    debugPrint('[FIRESTORE_WRITE] createdByName=$cleanCreatedByName');
 
     final memberRef = _firestore.collection('class_members').doc(student.id);
     final historyRef = _firestore.collection(_historyCollection).doc();
@@ -212,7 +223,7 @@ class PointsService {
         });
         debugPrint('[UPDATE] queued totalPoints=$newPoints');
 
-        debugPrint('[CREATE] Creating points_history/${historyRef.id}');
+        debugPrint('[CREATE] Creating student_points_records/${historyRef.id}');
         final historyData = {
           'id': historyRef.id,
           'studentId': student.id,
@@ -222,13 +233,16 @@ class PointsService {
           'operationType': isAdd ? 'add' : 'remove',
           'points': points,
           'reason': cleanReason,
+          'createdByUserId': cleanCreatedByUserId,
+          'createdByName': cleanCreatedByName,
           'createdAt': DateTime.now(),
-          'createdBy': cleanCreatedBy,
-          'totalPointsAfterOperation': newPoints,
+          'totalPointsBefore': oldPoints,
+          'totalPointsAfter': newPoints,
         };
         tx.set(historyRef, historyData);
         debugPrint('[CREATE] queued history document id=${historyRef.id}');
-        debugPrint('[CREATE] totalPointsAfterOperation=$newPoints');
+        debugPrint('[CREATE] totalPointsBefore=$oldPoints');
+        debugPrint('[CREATE] totalPointsAfter=$newPoints');
       });
 
       debugPrint('[COMMIT] Transaction committed successfully');
@@ -242,7 +256,7 @@ class PointsService {
           e.toString().contains('denied')) {
         debugPrint('[ERROR] Firestore permission denied');
         debugPrint(
-          '[ERROR] Check rules for class_members update and points_history create',
+          '[ERROR] Check rules for class_members update and student_points_records create',
         );
       }
       debugPrint('[STACK] $st');

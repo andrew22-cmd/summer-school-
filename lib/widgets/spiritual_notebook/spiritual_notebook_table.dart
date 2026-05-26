@@ -46,7 +46,7 @@ class SpiritualNotebookTable extends StatelessWidget {
                   const SizedBox(
                     width: 140,
                     child: Text(
-                      'اليوم',
+                      'Day',
                       style: TextStyle(fontWeight: FontWeight.w600),
                     ),
                   ),

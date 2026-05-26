@@ -81,8 +81,7 @@ class ClassMemberService {
 
     final qPrimary = _firestore
         .collection(collection)
-        .where('stage_norm', isEqualTo: normalized)
-        .orderBy('name');
+        .where('stage_norm', isEqualTo: normalized);
 
     // fallback candidates
     final noSpace = normalized;
@@ -100,8 +99,7 @@ class ClassMemberService {
         ? null
         : _firestore
               .collection(collection)
-              .where('stage', whereIn: candidates.toList())
-              .orderBy('name');
+              .where('stage', whereIn: candidates.toList());
 
     final controller = StreamController<List<ClassMemberModel>>.broadcast();
 

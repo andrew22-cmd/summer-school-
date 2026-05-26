@@ -37,28 +37,35 @@ class SpiritualNotebookService {
   }
 
   Stream<List<UserModel>> watchMembersInStage(String stage) {
+    // Query by role only, filter stage in-memory to avoid composite index
     return _firestore
         .collection('users')
         .where('role', isEqualTo: UserRole.member.value)
-        .where('stage', isEqualTo: stage.trim())
         .snapshots()
-        .map(
-          (snapshot) =>
-              snapshot.docs.map((doc) => UserModel.fromMap(doc.data())).toList()
+        .map((snapshot) {
+          final users =
+              snapshot.docs
+                  .map((doc) => UserModel.fromMap(doc.data()))
+                  .where((user) => user.stage.trim() == stage.trim())
+                  .toList()
                 ..sort(
                   (a, b) =>
                       a.name.toLowerCase().compareTo(b.name.toLowerCase()),
-                ),
-        );
+                );
+          return users;
+        });
   }
 
   Future<List<UserModel>> getMembersInStage(String stage) async {
+    // Query by role only, filter stage in-memory to avoid composite index
     final snapshot = await _firestore
         .collection('users')
         .where('role', isEqualTo: UserRole.member.value)
-        .where('stage', isEqualTo: stage.trim())
         .get();
-    return snapshot.docs.map((doc) => UserModel.fromMap(doc.data())).toList()
+    return snapshot.docs
+        .map((doc) => UserModel.fromMap(doc.data()))
+        .where((user) => user.stage.trim() == stage.trim())
+        .toList()
       ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
   }
 

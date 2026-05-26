@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:summerschool/core/routes/app_routes.dart';
 import 'package:summerschool/providers/auth_provider.dart';
+import 'package:summerschool/services/notification_service.dart';
 
 class MembersHomeScreen extends StatelessWidget {
   const MembersHomeScreen({super.key});
+
+  static final NotificationService _notificationService = NotificationService();
 
   static const List<_MenuItem> _menuItems = [
     _MenuItem('Profile', Icons.person_rounded),
@@ -22,17 +25,37 @@ class MembersHomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
+    final userId = authProvider.user?.id;
     final fullName = authProvider.user?.name.trim() ?? '';
     final welcomeName = fullName.isEmpty
         ? 'Student'
         : fullName.split(RegExp(r'\s+')).first;
 
     final isMemberManager = authProvider.isMemberManager;
+    final menuItems = List<_MenuItem>.from(_menuItems);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Members Home'),
         actions: [
+          if (userId != null)
+            StreamBuilder<int>(
+              stream: _notificationService.watchUnreadCount(userId),
+              builder: (context, snapshot) {
+                final unread = snapshot.data ?? 0;
+                return IconButton(
+                  tooltip: 'Notifications',
+                  onPressed: () {
+                    Navigator.pushNamed(context, AppRoutes.notificationCenter);
+                  },
+                  icon: Badge(
+                    isLabelVisible: unread > 0,
+                    label: Text('$unread'),
+                    child: const Icon(Icons.notifications_rounded),
+                  ),
+                );
+              },
+            ),
           TextButton.icon(
             onPressed: () async {
               await context.read<AuthProvider>().logout();
@@ -106,7 +129,7 @@ class MembersHomeScreen extends StatelessWidget {
                 const SizedBox(height: 16),
                 Expanded(
                   child: GridView.builder(
-                    itemCount: _menuItems.length,
+                    itemCount: menuItems.length,
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: crossAxisCount,
                       crossAxisSpacing: 12,
@@ -114,7 +137,7 @@ class MembersHomeScreen extends StatelessWidget {
                       childAspectRatio: 1.1,
                     ),
                     itemBuilder: (context, index) {
-                      final item = _menuItems[index];
+                      final item = menuItems[index];
                       return _MenuCard(item: item);
                     },
                   ),
@@ -158,6 +181,26 @@ class _MenuCard extends StatelessWidget {
           }
           if (item.title == 'Points') {
             Navigator.pushNamed(context, AppRoutes.points);
+            return;
+          }
+          if (item.title == 'Attachments') {
+            Navigator.pushNamed(context, AppRoutes.attachments);
+            return;
+          }
+          if (item.title == 'Schedule') {
+            Navigator.pushNamed(context, AppRoutes.schedule);
+            return;
+          }
+          if (item.title == 'My Tasks') {
+            Navigator.pushNamed(context, AppRoutes.myTasks);
+            return;
+          }
+          if (item.title == 'Attendance') {
+            Navigator.pushNamed(context, AppRoutes.attendance);
+            return;
+          }
+          if (item.title == 'Visits') {
+            Navigator.pushNamed(context, AppRoutes.followUpStudents);
             return;
           }
           // TODO: wire other menu actions

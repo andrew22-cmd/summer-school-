@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:summerschool/core/routes/app_routes.dart';
 import 'package:summerschool/providers/auth_provider.dart';
+import 'package:summerschool/services/notification_service.dart';
 
 class ManagerHomeScreen extends StatelessWidget {
   const ManagerHomeScreen({super.key});
+
+  static final NotificationService _notificationService = NotificationService();
 
   static const List<_ManagerMenuItem> _menuItems = [
     _ManagerMenuItem('Profile', Icons.person_rounded),
@@ -12,7 +15,7 @@ class ManagerHomeScreen extends StatelessWidget {
     _ManagerMenuItem('All Classes', Icons.class_rounded),
     _ManagerMenuItem('Add Notification', Icons.campaign_rounded),
     _ManagerMenuItem('Notes', Icons.sticky_note_2_rounded),
-    _ManagerMenuItem('Add Attachment', Icons.attach_file_rounded),
+    _ManagerMenuItem('Manage Attachments', Icons.attach_file_rounded),
     _ManagerMenuItem('Add Event', Icons.event_available_rounded),
     _ManagerMenuItem('Add Task', Icons.add_task_rounded),
   ];
@@ -29,6 +32,33 @@ class ManagerHomeScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Manager Home'),
         actions: [
+          Builder(
+            builder: (context) {
+              final userId = context.read<AuthProvider>().user?.id;
+              if (userId == null) return const SizedBox.shrink();
+
+              return StreamBuilder<int>(
+                stream: _notificationService.watchUnreadCount(userId),
+                builder: (context, snapshot) {
+                  final unread = snapshot.data ?? 0;
+                  return IconButton(
+                    tooltip: 'Notifications',
+                    onPressed: () {
+                      Navigator.pushNamed(
+                        context,
+                        AppRoutes.notificationCenter,
+                      );
+                    },
+                    icon: Badge(
+                      isLabelVisible: unread > 0,
+                      label: Text('$unread'),
+                      child: const Icon(Icons.notifications_rounded),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
           TextButton.icon(
             onPressed: () async {
               await context.read<AuthProvider>().logout();
@@ -120,6 +150,26 @@ class _ManagerMenuCard extends StatelessWidget {
           }
           if (item.title == 'Notes') {
             Navigator.pushNamed(context, AppRoutes.spiritualNotebook);
+            return;
+          }
+          if (item.title == 'Manage Attachments') {
+            Navigator.pushNamed(context, AppRoutes.manageAttachments);
+            return;
+          }
+          if (item.title == 'Add Task') {
+            Navigator.pushNamed(context, AppRoutes.manageTasks);
+            return;
+          }
+          if (item.title == 'All Classes') {
+            Navigator.pushNamed(context, AppRoutes.allClasses);
+            return;
+          }
+          if (item.title == 'All Members') {
+            Navigator.pushNamed(context, AppRoutes.allMembers);
+            return;
+          }
+          if (item.title == 'Add Notification') {
+            Navigator.pushNamed(context, AppRoutes.sendNotification);
             return;
           }
           // TODO: implement other manager menu actions
