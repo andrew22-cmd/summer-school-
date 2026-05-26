@@ -36,8 +36,7 @@ class ClassMemberProvider extends ChangeNotifier {
     final filtered = _members.where((m) {
       final searchOk = q.isEmpty || m.name.toLowerCase().contains(q);
 
-      final stageOk =
-          stage.isEmpty || _normalize(m.stage) == _normalize(stage);
+      final stageOk = stage.isEmpty || _normalize(m.stage) == _normalize(stage);
 
       return searchOk && stageOk;
     }).toList();
@@ -118,40 +117,42 @@ class ClassMemberProvider extends ChangeNotifier {
 
     await _sub?.cancel();
 
-    _sub = _service.watchMembersForStage(stage).listen(
-      (list) {
-        debugPrint(
-          '[STREAM UPDATE] ClassMemberProvider snapshot received count=${list.length}',
+    _sub = _service
+        .watchMembersForStage(stage)
+        .listen(
+          (list) {
+            debugPrint(
+              '[STREAM UPDATE] ClassMemberProvider snapshot received count=${list.length}',
+            );
+
+            for (final m in list) {
+              debugPrint(
+                '[STREAM] ClassMemberProvider member name="${m.name}" stage="${m.stage}" totalPoints=${m.totalPoints}',
+              );
+            }
+
+            _members = list;
+
+            _setLoading(false);
+
+            debugPrint(
+              '[PROVIDER NOTIFY] ClassMemberProvider calling notifyListeners() - UI should rebuild',
+            );
+
+            notifyListeners();
+
+            debugPrint('[PROVIDER NOTIFY] ✓ notifyListeners() completed');
+          },
+          onError: (e) {
+            debugPrint('[STREAM UPDATE] ClassMemberProvider stream error=$e');
+
+            _error = e.toString();
+
+            _setLoading(false);
+
+            notifyListeners();
+          },
         );
-
-        for (final m in list) {
-          debugPrint(
-            '[STREAM] ClassMemberProvider member name="${m.name}" stage="${m.stage}" totalPoints=${m.totalPoints}',
-          );
-        }
-
-        _members = list;
-
-        _setLoading(false);
-
-        debugPrint(
-          '[PROVIDER NOTIFY] ClassMemberProvider calling notifyListeners() - UI should rebuild',
-        );
-
-        notifyListeners();
-
-        debugPrint('[PROVIDER NOTIFY] ✓ notifyListeners() completed');
-      },
-      onError: (e) {
-        debugPrint('[STREAM UPDATE] ClassMemberProvider stream error=$e');
-
-        _error = e.toString();
-
-        _setLoading(false);
-
-        notifyListeners();
-      },
-    );
   }
 
   Future<void> startListeningAllMembers() async {
@@ -253,7 +254,8 @@ class ClassMemberProvider extends ChangeNotifier {
     required ClassMemberModel student,
     required int points,
     required String reason,
-    required String createdBy,
+    required String createdByUserId,
+    required String createdByName,
   }) async {
     debugPrint(
       '[ADD POINTS] ClassMemberProvider.addPoints() Adding $points points to ${student.name} reason="$reason"',
@@ -264,7 +266,8 @@ class ClassMemberProvider extends ChangeNotifier {
         student: student,
         points: points,
         reason: reason,
-        createdBy: createdBy,
+        createdByUserId: createdByUserId,
+        createdByName: createdByName,
       );
 
       debugPrint(
@@ -282,7 +285,8 @@ class ClassMemberProvider extends ChangeNotifier {
     required ClassMemberModel student,
     required int points,
     required String reason,
-    required String createdBy,
+    required String createdByUserId,
+    required String createdByName,
   }) async {
     debugPrint(
       '[REMOVE POINTS] ClassMemberProvider.removePoints() Removing $points points from ${student.name} reason="$reason"',
@@ -293,7 +297,8 @@ class ClassMemberProvider extends ChangeNotifier {
         student: student,
         points: points,
         reason: reason,
-        createdBy: createdBy,
+        createdByUserId: createdByUserId,
+        createdByName: createdByName,
       );
 
       debugPrint(

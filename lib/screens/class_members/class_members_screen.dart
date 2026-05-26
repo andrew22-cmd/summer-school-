@@ -294,7 +294,7 @@ class _ClassMembersScreenState extends State<ClassMembersScreen> {
                                               iconSize: 18,
 
                                               onPressed: () =>
-                                                  _openHistory(m, user.stage),
+                                                  _openHistory(m, m.stage),
 
                                               icon: const Icon(
                                                 Icons.history_rounded,

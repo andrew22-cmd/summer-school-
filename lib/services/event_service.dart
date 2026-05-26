@@ -2,21 +2,41 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:summerschool/models/event_model.dart';
+import 'package:summerschool/services/notification_service.dart';
 
 class EventService {
-  EventService({FirebaseFirestore? firestore})
-    : _firestore = firestore ?? FirebaseFirestore.instance;
+  EventService({
+    FirebaseFirestore? firestore,
+    NotificationService? notificationService,
+  }) : _firestore = firestore ?? FirebaseFirestore.instance,
+       _notificationService = notificationService ?? NotificationService();
 
   final FirebaseFirestore _firestore;
+  final NotificationService _notificationService;
 
   CollectionReference<Map<String, dynamic>> get _events =>
       _firestore.collection('events');
 
   String generateId() => _events.doc().id;
 
-  Future<void> createEvent(EventModel event) async {
+  Future<void> createEvent(EventModel event, {dynamic senderUserModel}) async {
     try {
       await _events.doc(event.id).set(event.toMap());
+
+      // Trigger automatic notification
+      if (senderUserModel != null) {
+        try {
+          await _notificationService.createAutomaticNotification(
+            sender: senderUserModel,
+            type: 'event',
+            title: 'حدث جديد',
+            body: 'تم إضافة حدث جديد: ${event.title}',
+            relatedId: event.id,
+          );
+        } catch (e) {
+          debugPrint('[EventService] notification error: $e');
+        }
+      }
     } on FirebaseException catch (e) {
       throw Exception('Failed to create event (${e.code}): ${e.message}');
     }

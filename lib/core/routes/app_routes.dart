@@ -8,6 +8,7 @@ import 'package:summerschool/screens/admin/admin_login_screen.dart';
 import 'package:summerschool/screens/points/points_screen.dart';
 import 'package:summerschool/providers/points_provider.dart';
 import 'package:summerschool/services/points_service.dart';
+import 'package:summerschool/screens/attendance/attendance_screen.dart';
 import 'package:summerschool/screens/home/home_screen.dart';
 import 'package:summerschool/screens/home/manager_home_screen.dart';
 import 'package:summerschool/screens/home/members_home_screen.dart';
@@ -24,6 +25,18 @@ import 'package:summerschool/screens/spiritual_notebook/members_notebook_selecti
 import 'package:summerschool/providers/spiritual_notebook_provider.dart';
 import 'package:summerschool/services/spiritual_notebook_service.dart';
 import 'package:summerschool/providers/auth_provider.dart';
+import 'package:summerschool/screens/attachments/attachments_screen.dart';
+import 'package:summerschool/screens/attachments/manage_attachments_screen.dart';
+import 'package:summerschool/screens/follow_up/follow_up_students_screen.dart';
+import 'package:summerschool/screens/schedule/schedule_screen.dart';
+import 'package:summerschool/screens/manager/all_classes_screen.dart';
+import 'package:summerschool/screens/manager/all_members/all_members_screen.dart';
+import 'package:summerschool/screens/tasks/manage_tasks_screen.dart';
+import 'package:summerschool/screens/tasks/my_tasks_screen.dart';
+import 'package:summerschool/screens/tasks/manage_task_history_screen.dart';
+import 'package:summerschool/screens/tasks/task_history_dashboard_screen.dart';
+import 'package:summerschool/screens/notifications/send_notification_screen.dart';
+import 'package:summerschool/screens/notifications/notification_center_screen.dart';
 
 class AppRoutes {
   AppRoutes._();
@@ -40,11 +53,25 @@ class AppRoutes {
   static const String addEvent = '/add-event';
   static const String manageEvents = '/manage-events';
   static const String points = '/points';
+  static const String attendance = '/attendance';
+  static const String servantsAttendance = '/servants-attendance';
+  static const String attachments = '/attachments';
+  static const String manageAttachments = '/manage-attachments';
+  static const String schedule = '/schedule';
+  static const String followUpStudents = '/follow-up-students';
+  static const String allClasses = '/all-classes';
+  static const String allMembers = '/all-members';
+  static const String myTasks = '/my-tasks';
+  static const String manageTasks = '/manage-tasks';
+  static const String manageTaskHistory = '/manage-task-history';
+  static const String taskHistoryDashboard = '/task-history-dashboard';
   static const String spiritualNotebook = '/spiritual-notebook';
   static const String membersNotebookSelection = '/members-notebook-selection';
   static const String adminLogin = '/admin-login';
   static const String adminDashboard = '/admin-dashboard';
   static const String adminClassMembers = '/admin-class-members';
+  static const String sendNotification = '/send-notification';
+  static const String notificationCenter = '/notification-center';
 
   static Map<String, WidgetBuilder> get routes => {
     splash: (_) => const SplashScreen(),
@@ -62,6 +89,18 @@ class AppRoutes {
       create: (_) => PointsProvider(PointsService()),
       child: const PointsScreen(),
     ),
+    attendance: (_) => const AttendanceScreen(),
+    servantsAttendance: (_) => const AttendanceScreen(servantsMode: true),
+    attachments: (_) => const AttachmentsScreen(),
+    manageAttachments: (_) => const ManageAttachmentsScreen(),
+    schedule: (_) => const ScheduleScreen(),
+    followUpStudents: (_) => const FollowUpStudentsScreen(),
+    allClasses: (_) => const AllClassesScreen(),
+    allMembers: (_) => const AllMembersScreen(),
+    myTasks: (_) => const MyTasksScreen(),
+    manageTasks: (_) => const ManageTasksScreen(),
+    manageTaskHistory: (_) => const ManageTaskHistoryScreen(),
+    taskHistoryDashboard: (_) => const TaskHistoryDashboardScreen(),
     spiritualNotebook: (context) =>
         ChangeNotifierProvider<SpiritualNotebookProvider>(
           create: (_) => SpiritualNotebookProvider(SpiritualNotebookService())
@@ -79,5 +118,7 @@ class AppRoutes {
             ..startListening(),
       child: const AdminDashboardScreen(),
     ),
+    sendNotification: (_) => const SendNotificationScreen(),
+    notificationCenter: (_) => const NotificationCenterScreen(),
   };
 }

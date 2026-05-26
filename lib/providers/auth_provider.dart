@@ -84,6 +84,7 @@ class AuthProvider extends ChangeNotifier {
 
       _user = await _fetchOrCreateFirestoreUser(firebaseUser);
       _logUserState('login', _user);
+
       return true;
     } on FirebaseAuthException catch (error) {
       _errorMessage = _authErrorMessage(error);
