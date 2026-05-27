@@ -4,17 +4,21 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import 'package:summerschool/constants/user_roles.dart';
 import 'package:summerschool/models/user_model.dart';
+import 'package:summerschool/services/fcm_service.dart';
 import 'package:summerschool/services/firestore_user_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   AuthProvider({
     FirebaseAuth? firebaseAuth,
     FirestoreUserService? firestoreUserService,
+    FcmService? fcmService,
   }) : _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance,
-       _firestoreUserService = firestoreUserService ?? FirestoreUserService();
+       _firestoreUserService = firestoreUserService ?? FirestoreUserService(),
+       _fcmService = fcmService ?? FcmService();
 
   final FirebaseAuth _firebaseAuth;
   final FirestoreUserService _firestoreUserService;
+  final FcmService _fcmService;
 
   bool _isLoading = false;
   String? _errorMessage;
@@ -56,6 +60,7 @@ class AuthProvider extends ChangeNotifier {
 
       _user = await _fetchOrCreateFirestoreUser(firebaseUser);
       _logUserState('initialize', _user);
+      await _syncNotificationTopics();
     } on FirebaseAuthException catch (error) {
       _errorMessage = _authErrorMessage(error);
       _user = null;
@@ -84,6 +89,7 @@ class AuthProvider extends ChangeNotifier {
 
       _user = await _fetchOrCreateFirestoreUser(firebaseUser);
       _logUserState('login', _user);
+      await _syncNotificationTopics();
 
       return true;
     } on FirebaseAuthException catch (error) {
@@ -120,6 +126,7 @@ class AuthProvider extends ChangeNotifier {
     _errorMessage = null;
 
     try {
+      await _fcmService.unsubscribeFromTopics();
       await _firebaseAuth.signOut();
       _user = null;
     } catch (error) {
@@ -127,6 +134,16 @@ class AuthProvider extends ChangeNotifier {
     } finally {
       _setLoading(false);
     }
+  }
+
+  Future<void> _syncNotificationTopics() async {
+    final currentUser = _user;
+    if (currentUser == null) return;
+
+    await _fcmService.subscribeToUserTopics(
+      currentUser.role.value,
+      currentUser.stage.isEmpty ? null : currentUser.stage,
+    );
   }
 
   void _setLoading(bool value) {

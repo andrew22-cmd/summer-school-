@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:summerschool/models/event_model.dart';
+import 'package:summerschool/models/user_model.dart';
 import 'package:summerschool/services/event_service.dart';
 
 class EventProvider extends ChangeNotifier {
@@ -52,10 +53,10 @@ class EventProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> addEvent(EventModel event) async {
+  Future<void> addEvent(EventModel event, {UserModel? senderUserModel}) async {
     _setLoading(true);
     try {
-      await _service.createEvent(event);
+      await _service.createEvent(event, senderUserModel: senderUserModel);
       _error = null;
       // refresh local list will be handled by stream listener
     } catch (e) {

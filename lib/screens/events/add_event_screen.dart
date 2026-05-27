@@ -70,8 +70,7 @@ class _AddEventScreenState extends State<AddEventScreen> {
     setState(() => _isSending = true);
 
     try {
-      final service = EventService();
-      final id = service.generateId();
+      final id = EventService().generateId();
       final dateFull = DateTime(
         _date!.year,
         _date!.month,
@@ -100,12 +99,10 @@ class _AddEventScreenState extends State<AddEventScreen> {
         imageUrl: null,
       );
 
-      await service.createEvent(event);
-
-      // notify provider if present
-      try {
-        context.read<EventProvider>().addEvent(event);
-      } catch (_) {}
+      await context.read<EventProvider>().addEvent(
+        event,
+        senderUserModel: auth.user,
+      );
 
       if (mounted) {
         ScaffoldMessenger.of(

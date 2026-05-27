@@ -7,6 +7,7 @@ import 'package:summerschool/providers/points_provider.dart';
 import 'package:summerschool/providers/attachment_provider.dart';
 import 'package:summerschool/providers/follow_up_provider.dart';
 import 'package:summerschool/providers/task_provider.dart';
+import 'package:summerschool/services/fcm_service.dart';
 import 'package:summerschool/services/attachment_service.dart';
 import 'package:summerschool/services/follow_up_service.dart';
 import 'package:summerschool/services/task_service.dart';
@@ -35,6 +36,9 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await _initializeFirebase();
 
+  final fcmService = FcmService();
+  await fcmService.initialize();
+
   final localStorage = LocalStorageService();
   await _runSilentStageNormMigration(localStorage);
 
@@ -43,9 +47,11 @@ Future<void> main() async {
       providers: [
         Provider<LocalStorageService>(create: (_) => localStorage),
         Provider<FirestoreUserService>(create: (_) => FirestoreUserService()),
+        Provider<FcmService>.value(value: fcmService),
         ChangeNotifierProvider<AuthProvider>(
           create: (context) => AuthProvider(
             firestoreUserService: context.read<FirestoreUserService>(),
+            fcmService: context.read<FcmService>(),
           )..initialize(),
         ),
         ChangeNotifierProvider<ClassMemberProvider>(

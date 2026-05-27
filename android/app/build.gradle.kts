@@ -15,6 +15,8 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        // Enable core library desugaring for libraries that require newer Java APIs
+        isCoreLibraryDesugaringEnabled = true
     }
 
     kotlinOptions {
@@ -29,6 +31,8 @@ android {
 
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        // Enable multidex in case method count exceeds limit due to added dependencies
+        multiDexEnabled = true
     }
 
     buildTypes {
@@ -45,6 +49,9 @@ dependencies {
 
     // Firebase Analytics
     implementation("com.google.firebase:firebase-analytics")
+
+    // Core library desugaring for java.time and other APIs on older devices
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 
 }
 

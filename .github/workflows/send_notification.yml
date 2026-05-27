@@ -1,20 +1,8 @@
 name: Send Firebase Cloud Messaging Notification
 
 on:
-  workflow_dispatch:
-    inputs:
-      title:
-        description: 'Notification title'
-        required: true
-        type: string
-      body:
-        description: 'Notification body'
-        required: true
-        type: string
-      topic:
-        description: 'FCM topic to send to (e.g., all, members, managers)'
-        required: true
-        type: string
+  repository_dispatch:
+    types: [send-notification]
 
 jobs:
   send-notification:
@@ -34,7 +22,8 @@ jobs:
       - name: Install dependencies
         run: |
           cd notifications-backend
-          npm install firebase-admin
+          # لو مفيش فايل اسمه package.json ومسبب مشكلة في الكاش، الـ install العادي هيتصرف
+          npm install firebase-admin --no-audit --no-fund
 
       - name: Create service account file
         env:
@@ -45,6 +34,11 @@ jobs:
           echo "✅ Service account file created"
 
       - name: Send FCM notification
+        env:
+          # بنجيب البيانات المبعوتة من الموبايل جوة الـ client_payload بتاع الـ API
+          NOTIF_TITLE: ${{ github.event.client_payload.title }}
+          NOTIF_BODY: ${{ github.event.client_payload.body }}
+          NOTIF_TOPIC: ${{ github.event.client_payload.topic }}
         run: |
           cd notifications-backend
           node -e "
@@ -58,19 +52,19 @@ jobs:
           (async () => {
             try {
               console.log('📤 Sending FCM notification...');
-              console.log('   Title:', '${{ inputs.title }}');
-              console.log('   Body:', '${{ inputs.body }}');
-              console.log('   Topic:', '${{ inputs.topic }}');
+              console.log('   Title:', process.env.NOTIF_TITLE);
+              console.log('   Body:', process.env.NOTIF_BODY);
+              console.log('   Topic:', process.env.NOTIF_TOPIC);
               
               const message = {
                 notification: {
-                  title: '${{ inputs.title }}',
-                  body: '${{ inputs.body }}',
+                  title: process.env.NOTIF_TITLE,
+                  body: process.env.NOTIF_BODY,
                 },
                 android: {
                   priority: 'high',
                   notification: {
-                    channelId: 'default',
+                    channelId: 'high_importance_channel', // عدلناها هنا عشان تطابق الأندرويد
                     priority: 'max',
                     sound: 'default',
                   },
@@ -82,7 +76,7 @@ jobs:
                     },
                   },
                 },
-                topic: '${{ inputs.topic }}',
+                topic: process.env.NOTIF_TOPIC,
               };
               
               const response = await admin.messaging().send(message);
@@ -110,6 +104,4 @@ jobs:
         if: success()
         run: |
           echo "🎉 FCM notification workflow completed successfully!"
-          echo "   Topic: ${{ inputs.topic }}"
-          echo "   Title: ${{ inputs.title }}"
-          echo "   Body: ${{ inputs.body }}"
+          echo "   Topic: ${{ github.event.client_payload.topic }}"
