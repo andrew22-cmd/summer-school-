@@ -1,0 +1,44 @@
+name: Send FCM Push Notification
+
+on:
+  workflow_dispatch:
+    inputs:
+      title:
+        description: 'Notification Title'
+        required: true
+        type: string
+      body:
+        description: 'Notification Body'
+        required: true
+        type: string
+      topic:
+        description: 'Target Topic (e.g., all_users, stage_2m)'
+        required: true
+        type: string
+
+jobs:
+  send-push:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-js-version: '20'
+
+    - name: Install Firebase Admin SDK
+      run: npm install firebase-admin
+
+    - name: Create Service Account File
+      run: |
+        echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" > serviceAccount.json
+
+    - name: Run FCM Sender Script
+      env:
+        NOTIF_TITLE: ${{ inputs.title }}
+        NOTIF_BODY: ${{ inputs.body }}
+        NOTIF_TOPIC: ${{ inputs.topic }}
+      run: node .github/workflows/scripts/send_fcm.js
