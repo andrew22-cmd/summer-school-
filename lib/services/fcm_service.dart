@@ -1,10 +1,12 @@
 import 'dart:convert';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:summerschool/firebase_options.dart';
+import 'package:summerschool/models/user_model.dart';
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -22,11 +24,13 @@ class FcmService {
   factory FcmService() => instance;
 
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
   final Set<String> _subscribedTopics = <String>{};
 
   bool _initialized = false;
+  String? _currentUserId;
 
   static const AndroidNotificationChannel _channel = AndroidNotificationChannel(
     'summer_school_notifications',
@@ -61,12 +65,20 @@ class FcmService {
           AndroidFlutterLocalNotificationsPlugin
         >();
     await androidPlugin?.createNotificationChannel(_channel);
-    await androidPlugin?.requestNotificationsPermission();
+    final androidPermissionGranted = await androidPlugin
+        ?.requestNotificationsPermission();
+    debugPrint(
+      '[FCM] Android notification permission granted: ${androidPermissionGranted ?? false}',
+    );
 
     await _requestPermissions();
 
     FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
     FirebaseMessaging.onMessageOpenedApp.listen(_handleOpenedMessage);
+    FirebaseMessaging.instance.onTokenRefresh.listen((token) {
+      debugPrint('[FCM] Token refreshed: $token');
+      _saveTokenIfPossible(token);
+    });
 
     final initialMessage = await _messaging.getInitialMessage();
     if (initialMessage != null) {
@@ -92,6 +104,10 @@ class FcmService {
       badge: true,
       sound: true,
     );
+
+    debugPrint(
+      '[FCM] iOS/APNs permission status: ${settings.authorizationStatus}',
+    );
   }
 
   Future<String?> getToken() async {
@@ -100,12 +116,53 @@ class FcmService {
     return token;
   }
 
+  Future<void> syncTokenWithUser(UserModel user) async {
+    _currentUserId = user.id;
+
+    final token = await getToken();
+    if (token == null || token.isEmpty) {
+      debugPrint('[FCM] Token is null/empty, not saving to Firestore');
+      return;
+    }
+
+    await _firestore.collection('users').doc(user.id).set({
+      'fcmToken': token,
+      'fcmTokenUpdatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+
+    debugPrint('[FCM] Token saved to Firestore for uid=${user.id}');
+  }
+
+  Future<void> clearTokenForUser(String userId) async {
+    try {
+      await _firestore.collection('users').doc(userId).set({
+        'fcmToken': FieldValue.delete(),
+        'fcmTokenUpdatedAt': FieldValue.delete(),
+      }, SetOptions(merge: true));
+      debugPrint('[FCM] Cleared token fields for uid=$userId');
+    } catch (error) {
+      debugPrint('[FCM] Failed to clear token for uid=$userId: $error');
+    } finally {
+      if (_currentUserId == userId) {
+        _currentUserId = null;
+      }
+    }
+  }
+
   Future<void> subscribeToUserTopics(String role, String? stage) async {
-    final topics = <String>{'all_users'};
+    final topics = <String>{'all', 'all_users'};
 
     final normalizedRole = _normalizeTopic(role);
     if (normalizedRole.isNotEmpty) {
       topics.add(normalizedRole);
+    }
+
+    if (normalizedRole == 'manager') {
+      topics.add('managers');
+    } else if (normalizedRole == 'member_manager') {
+      topics.add('member_managers');
+    } else if (normalizedRole == 'member') {
+      topics.add('members');
     }
 
     final sanitizedStage = _sanitizeStage(stage);
@@ -137,7 +194,10 @@ class FcmService {
   }
 
   Future<void> _handleForegroundMessage(RemoteMessage message) async {
-    debugPrint('[FCM][Foreground] ${message.notification?.title}');
+    debugPrint('[FCM][Foreground] messageId=${message.messageId}');
+    debugPrint('[FCM][Foreground] title=${message.notification?.title}');
+    debugPrint('[FCM][Foreground] body=${message.notification?.body}');
+    debugPrint('[FCM][Foreground] data=${message.data}');
 
     final notification = message.notification;
     if (notification == null) return;
@@ -162,7 +222,59 @@ class FcmService {
   }
 
   void _handleOpenedMessage(RemoteMessage message) {
-    debugPrint('[FCM][Open] ${message.notification?.title}');
+    debugPrint('[FCM][Open] messageId=${message.messageId}');
+    debugPrint('[FCM][Open] title=${message.notification?.title}');
+    debugPrint('[FCM][Open] body=${message.notification?.body}');
+    debugPrint('[FCM][Open] data=${message.data}');
+  }
+
+  Future<void> showTestNotification({
+    String title = 'Test Local Notification',
+    String body = 'This is a local notification test.',
+  }) async {
+    debugPrint('[FCM] Showing test local notification');
+    await _localNotifications.show(
+      999001,
+      title,
+      body,
+      NotificationDetails(
+        android: AndroidNotificationDetails(
+          _channel.id,
+          _channel.name,
+          channelDescription: _channel.description,
+          importance: Importance.high,
+          priority: Priority.high,
+          icon: '@mipmap/ic_launcher',
+        ),
+        iOS: const DarwinNotificationDetails(),
+      ),
+      payload: jsonEncode({'type': 'test_local_notification'}),
+    );
+  }
+
+  Future<void> _saveTokenIfPossible(String token) async {
+    final userId = _currentUserId;
+    if (userId == null || userId.isEmpty) {
+      debugPrint('[FCM] No active user, skipping token refresh save');
+      return;
+    }
+
+    if (token.isEmpty) {
+      debugPrint('[FCM] Refreshed token empty, skipping save');
+      return;
+    }
+
+    try {
+      await _firestore.collection('users').doc(userId).set({
+        'fcmToken': token,
+        'fcmTokenUpdatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+      debugPrint('[FCM] Refreshed token saved for uid=$userId');
+    } catch (error) {
+      debugPrint(
+        '[FCM] Failed to save refreshed token for uid=$userId: $error',
+      );
+    }
   }
 
   String _normalizeTopic(String value) {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:summerschool/core/routes/app_routes.dart';
 import 'package:summerschool/providers/auth_provider.dart';
+import 'package:summerschool/services/fcm_service.dart';
 import 'package:summerschool/services/notification_service.dart';
 
 class ManagerHomeScreen extends StatelessWidget {
@@ -99,6 +100,24 @@ class ManagerHomeScreen extends StatelessWidget {
                 Text(
                   'Manage summer school activities, classes, and members.',
                   style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 12),
+                FilledButton.icon(
+                  onPressed: () async {
+                    try {
+                      await context.read<FcmService>().showTestNotification(
+                        title: 'Test Local Notification',
+                        body: 'This notification proves local alerts work.',
+                      );
+                    } catch (error) {
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Test failed: $error')),
+                      );
+                    }
+                  },
+                  icon: const Icon(Icons.notifications_active_rounded),
+                  label: const Text('Test Local Notification'),
                 ),
                 const SizedBox(height: 16),
                 Expanded(

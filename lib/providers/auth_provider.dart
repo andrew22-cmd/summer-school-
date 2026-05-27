@@ -126,6 +126,10 @@ class AuthProvider extends ChangeNotifier {
     _errorMessage = null;
 
     try {
+      final currentUser = _user;
+      if (currentUser != null) {
+        await _fcmService.clearTokenForUser(currentUser.id);
+      }
       await _fcmService.unsubscribeFromTopics();
       await _firebaseAuth.signOut();
       _user = null;
@@ -144,6 +148,8 @@ class AuthProvider extends ChangeNotifier {
       currentUser.role.value,
       currentUser.stage.isEmpty ? null : currentUser.stage,
     );
+
+    await _fcmService.syncTokenWithUser(currentUser);
   }
 
   void _setLoading(bool value) {

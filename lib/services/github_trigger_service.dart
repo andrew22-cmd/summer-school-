@@ -80,12 +80,14 @@ class GitHubTriggerService {
     final normalizedRole = role.trim().toLowerCase();
     final sanitizedStage = _sanitizeStage(stage);
 
-    if (normalizedRole == 'manager') return 'all_users';
+    if (normalizedRole == 'manager') return 'all';
+    if (normalizedRole == 'member_manager') return 'member_managers';
+    if (normalizedRole == 'member') return 'members';
     if (sanitizedStage != null && sanitizedStage.isNotEmpty) {
       return sanitizedStage;
     }
     if (normalizedRole.isNotEmpty) return normalizedRole;
-    return 'all_users';
+    return 'all';
   }
 
   String? _sanitizeStage(String? stage) {
