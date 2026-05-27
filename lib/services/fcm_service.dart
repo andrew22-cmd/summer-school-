@@ -34,12 +34,13 @@ class FcmService {
   String? _currentToken;
   String? _permissionStatus;
   String? _lastReceivedMessage;
+  DateTime? _lastReceivedAt;
 
   static const AndroidNotificationChannel _channel = AndroidNotificationChannel(
-    'high_importance_channel',
-    'High Importance Notifications',
+    'default_channel',
+    'Default Channel',
     description: 'Foreground notifications for Summer School',
-    importance: Importance.high,
+    importance: Importance.max,
   );
 
   Future<void> initialize() async {
@@ -67,6 +68,8 @@ class FcmService {
         .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin
         >();
+    // ensure the Android channel exists before registering listeners
+    debugPrint('[FCM] Creating Android notification channel: ${_channel.id}');
     await androidPlugin?.createNotificationChannel(_channel);
     final androidPermissionGranted = await androidPlugin
         ?.requestNotificationsPermission();
@@ -76,7 +79,11 @@ class FcmService {
 
     await _requestPermissions();
 
-    FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
+    debugPrint('[FCM] Registering FirebaseMessaging.onMessage listener');
+    FirebaseMessaging.onMessage.listen((message) {
+      debugPrint('[FCM][onMessage] fired');
+      _handleForegroundMessage(message);
+    });
     FirebaseMessaging.onMessageOpenedApp.listen(_handleOpenedMessage);
     FirebaseMessaging.instance.onTokenRefresh.listen((token) {
       debugPrint('[FCM] Token refreshed: $token');
@@ -217,33 +224,71 @@ class FcmService {
   }
 
   Future<void> _handleForegroundMessage(RemoteMessage message) async {
-    debugPrint('[FCM][Foreground] messageId=${message.messageId}');
-    debugPrint('[FCM][Foreground] title=${message.notification?.title}');
-    debugPrint('[FCM][Foreground] body=${message.notification?.body}');
-    debugPrint('[FCM][Foreground] data=${message.data}');
-    _lastReceivedMessage =
-        'title=${message.notification?.title}, body=${message.notification?.body}, data=${message.data}';
+    debugPrint('[FCM][Foreground] onMessage handler start');
+    try {
+      final Map<String, dynamic> dump = {
+        'messageId': message.messageId,
+        'from': message.from,
+        'sentTime': message.sentTime?.toIso8601String(),
+        'notification': {
+          'title': message.notification?.title,
+          'body': message.notification?.body,
+        },
+        'data': message.data,
+      };
+      debugPrint('[FCM][Foreground] full message: ${jsonEncode(dump)}');
+
+      debugPrint('[FCM][Foreground] title=${message.notification?.title}');
+      debugPrint('[FCM][Foreground] body=${message.notification?.body}');
+      debugPrint('[FCM][Foreground] data=${message.data}');
+
+      _lastReceivedAt = DateTime.now();
+      _lastReceivedMessage =
+          'title=${message.notification?.title}, body=${message.notification?.body}, data=${message.data}';
+    } catch (e, st) {
+      debugPrint('[FCM][Foreground] Error while processing message: $e');
+      debugPrint(st.toString());
+    }
 
     final notification = message.notification;
-    if (notification == null) return;
-
-    await _localNotifications.show(
-      notification.hashCode,
-      notification.title ?? '',
-      notification.body ?? '',
-      NotificationDetails(
-        android: AndroidNotificationDetails(
-          _channel.id,
-          _channel.name,
-          channelDescription: _channel.description,
-          importance: Importance.high,
-          priority: Priority.high,
-          icon: '@mipmap/ic_launcher',
+    if (notification != null) {
+      await _localNotifications.show(
+        notification.hashCode,
+        notification.title ?? '',
+        notification.body ?? '',
+        NotificationDetails(
+          android: AndroidNotificationDetails(
+            _channel.id,
+            _channel.name,
+            channelDescription: _channel.description,
+            importance: Importance.max,
+            priority: Priority.high,
+            icon: '@mipmap/ic_launcher',
+          ),
+          iOS: const DarwinNotificationDetails(),
         ),
-        iOS: const DarwinNotificationDetails(),
-      ),
-      payload: jsonEncode(message.data),
+        payload: jsonEncode(message.data),
+      );
+    }
+  }
+
+  /// Simulate an incoming FCM message (useful for debugging)
+  Future<void> simulateIncomingMessage({
+    String? title,
+    String? body,
+    Map<String, dynamic>? data,
+  }) async {
+    final remoteNotification = RemoteNotification(title: title, body: body);
+    final message = RemoteMessage(
+      messageId: 'simulated-${DateTime.now().microsecondsSinceEpoch}',
+      notification: remoteNotification,
+      data: data ?? <String, dynamic>{'simulated': 'true'},
     );
+
+    debugPrint(
+      '[FCM] Simulating incoming message: title=$title body=$body data=$data',
+    );
+    await _handleForegroundMessage(message);
   }
 
   void _handleOpenedMessage(RemoteMessage message) {
@@ -309,6 +354,7 @@ class FcmService {
   String? get permissionStatus => _permissionStatus;
 
   String? get lastReceivedMessage => _lastReceivedMessage;
+  DateTime? get lastReceivedAt => _lastReceivedAt;
 
   List<String> get subscribedTopics =>
       List<String>.unmodifiable(_subscribedTopics);

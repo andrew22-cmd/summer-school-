@@ -88,6 +88,13 @@ class _DebugFcmScreenState extends State<DebugFcmScreen> {
             title: 'Last received message',
             value: fcm.lastReceivedMessage ?? 'No message received yet',
           ),
+          const SizedBox(height: 12),
+          _InfoCard(
+            title: 'Last received at',
+            value: fcm.lastReceivedAt == null
+                ? 'Never'
+                : fcm.lastReceivedAt!.toLocal().toString(),
+          ),
           const SizedBox(height: 20),
           FilledButton.icon(
             onPressed: user == null ? null : _refreshAndResubscribe,
@@ -103,6 +110,20 @@ class _DebugFcmScreenState extends State<DebugFcmScreen> {
             },
             icon: const Icon(Icons.notifications_active_rounded),
             label: const Text('Test local notification'),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: () async {
+              await fcm.simulateIncomingMessage(
+                title: 'Simulated',
+                body: 'This is a simulated FCM message',
+                data: {'simulated': 'true'},
+              );
+              if (!mounted) return;
+              setState(() {});
+            },
+            icon: const Icon(Icons.play_arrow_rounded),
+            label: const Text('Simulate Incoming FCM'),
           ),
           const SizedBox(height: 12),
           Text(
