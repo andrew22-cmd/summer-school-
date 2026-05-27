@@ -1,25 +1,34 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'package:summerschool/constants/user_roles.dart';
 import 'package:summerschool/models/event_model.dart';
+import 'package:summerschool/models/user_model.dart';
+import 'package:summerschool/services/github_trigger_service.dart';
 import 'package:summerschool/services/notification_service.dart';
 
 class EventService {
   EventService({
     FirebaseFirestore? firestore,
     NotificationService? notificationService,
+    GitHubTriggerService? githubTriggerService,
   }) : _firestore = firestore ?? FirebaseFirestore.instance,
-       _notificationService = notificationService ?? NotificationService();
+       _notificationService = notificationService ?? NotificationService(),
+       _githubTriggerService = githubTriggerService ?? GitHubTriggerService();
 
   final FirebaseFirestore _firestore;
   final NotificationService _notificationService;
+  final GitHubTriggerService? _githubTriggerService;
 
   CollectionReference<Map<String, dynamic>> get _events =>
       _firestore.collection('events');
 
   String generateId() => _events.doc().id;
 
-  Future<void> createEvent(EventModel event, {dynamic senderUserModel}) async {
+  Future<void> createEvent(
+    EventModel event, {
+    UserModel? senderUserModel,
+  }) async {
     try {
       await _events.doc(event.id).set(event.toMap());
 
@@ -36,6 +45,24 @@ class EventService {
         } catch (e) {
           debugPrint('[EventService] notification error: $e');
         }
+      }
+
+      try {
+        final githubTriggerService = _githubTriggerService;
+        if (githubTriggerService != null && senderUserModel != null) {
+          final topic = githubTriggerService.resolveTopic(
+            role: senderUserModel.role.value,
+            stage: senderUserModel.stage,
+          );
+
+          await githubTriggerService.triggerNotification(
+            title: 'New Event',
+            body: 'You have a new event',
+            topic: topic,
+          );
+        }
+      } catch (e) {
+        debugPrint('[EventService] GitHub trigger error: $e');
       }
     } on FirebaseException catch (e) {
       throw Exception('Failed to create event (${e.code}): ${e.message}');
