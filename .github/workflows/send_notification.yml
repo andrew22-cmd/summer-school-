@@ -1,0 +1,115 @@
+name: Send Firebase Cloud Messaging Notification
+
+on:
+  workflow_dispatch:
+    inputs:
+      title:
+        description: 'Notification title'
+        required: true
+        type: string
+      body:
+        description: 'Notification body'
+        required: true
+        type: string
+      topic:
+        description: 'FCM topic to send to (e.g., all, members, managers)'
+        required: true
+        type: string
+
+jobs:
+  send-notification:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: 'notifications-backend/package-lock.json'
+
+      - name: Install dependencies
+        run: |
+          cd notifications-backend
+          npm install firebase-admin
+
+      - name: Create service account file
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          cd notifications-backend
+          echo "$FIREBASE_SERVICE_ACCOUNT" > serviceAccountKey.json
+          echo "✅ Service account file created"
+
+      - name: Send FCM notification
+        run: |
+          cd notifications-backend
+          node -e "
+          const admin = require('firebase-admin');
+          const serviceAccount = require('./serviceAccountKey.json');
+          
+          admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount),
+          });
+          
+          (async () => {
+            try {
+              console.log('📤 Sending FCM notification...');
+              console.log('   Title:', '${{ inputs.title }}');
+              console.log('   Body:', '${{ inputs.body }}');
+              console.log('   Topic:', '${{ inputs.topic }}');
+              
+              const message = {
+                notification: {
+                  title: '${{ inputs.title }}',
+                  body: '${{ inputs.body }}',
+                },
+                android: {
+                  priority: 'high',
+                  notification: {
+                    channelId: 'default',
+                    priority: 'max',
+                    sound: 'default',
+                  },
+                },
+                apns: {
+                  payload: {
+                    aps: {
+                      sound: 'default',
+                    },
+                  },
+                },
+                topic: '${{ inputs.topic }}',
+              };
+              
+              const response = await admin.messaging().send(message);
+              console.log('✅ Notification sent successfully!');
+              console.log('   Message ID:', response);
+              
+            } catch (error) {
+              console.error('❌ Failed to send notification:');
+              console.error('   Error:', error.message);
+              process.exit(1);
+            } finally {
+              process.exit(0);
+            }
+          })();
+          "
+
+      - name: Cleanup
+        if: always()
+        run: |
+          cd notifications-backend
+          rm -f serviceAccountKey.json
+          echo "🧹 Cleaned up service account file"
+
+      - name: Notification result
+        if: success()
+        run: |
+          echo "🎉 FCM notification workflow completed successfully!"
+          echo "   Topic: ${{ inputs.topic }}"
+          echo "   Title: ${{ inputs.title }}"
+          echo "   Body: ${{ inputs.body }}"
