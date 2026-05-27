@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:summerschool/core/routes/app_routes.dart';
 import 'package:summerschool/providers/auth_provider.dart';
-import 'package:summerschool/services/fcm_service.dart';
 import 'package:summerschool/services/notification_service.dart';
 
 class ManagerHomeScreen extends StatelessWidget {
@@ -15,6 +14,7 @@ class ManagerHomeScreen extends StatelessWidget {
     _ManagerMenuItem('All Members', Icons.groups_rounded),
     _ManagerMenuItem('All Classes', Icons.class_rounded),
     _ManagerMenuItem('Add Notification', Icons.campaign_rounded),
+    _ManagerMenuItem('FCM Debug', Icons.bug_report_rounded),
     _ManagerMenuItem('Notes', Icons.sticky_note_2_rounded),
     _ManagerMenuItem('Manage Attachments', Icons.attach_file_rounded),
     _ManagerMenuItem('Add Event', Icons.event_available_rounded),
@@ -101,24 +101,6 @@ class ManagerHomeScreen extends StatelessWidget {
                   'Manage summer school activities, classes, and members.',
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
-                const SizedBox(height: 12),
-                FilledButton.icon(
-                  onPressed: () async {
-                    try {
-                      await context.read<FcmService>().showTestNotification(
-                        title: 'Test Local Notification',
-                        body: 'This notification proves local alerts work.',
-                      );
-                    } catch (error) {
-                      if (!context.mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Test failed: $error')),
-                      );
-                    }
-                  },
-                  icon: const Icon(Icons.notifications_active_rounded),
-                  label: const Text('Test Local Notification'),
-                ),
                 const SizedBox(height: 16),
                 Expanded(
                   child: GridView.builder(
@@ -189,6 +171,10 @@ class _ManagerMenuCard extends StatelessWidget {
           }
           if (item.title == 'Add Notification') {
             Navigator.pushNamed(context, AppRoutes.sendNotification);
+            return;
+          }
+          if (item.title == 'FCM Debug') {
+            Navigator.pushNamed(context, AppRoutes.debugFcm);
             return;
           }
           // TODO: implement other manager menu actions

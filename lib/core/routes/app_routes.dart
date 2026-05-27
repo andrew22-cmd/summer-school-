@@ -37,6 +37,7 @@ import 'package:summerschool/screens/tasks/manage_task_history_screen.dart';
 import 'package:summerschool/screens/tasks/task_history_dashboard_screen.dart';
 import 'package:summerschool/screens/notifications/send_notification_screen.dart';
 import 'package:summerschool/screens/notifications/notification_center_screen.dart';
+import 'package:summerschool/screens/debug/debug_fcm_screen.dart';
 
 class AppRoutes {
   AppRoutes._();
@@ -72,6 +73,7 @@ class AppRoutes {
   static const String adminClassMembers = '/admin-class-members';
   static const String sendNotification = '/send-notification';
   static const String notificationCenter = '/notification-center';
+  static const String debugFcm = '/debug-fcm';
 
   static Map<String, WidgetBuilder> get routes => {
     splash: (_) => const SplashScreen(),
@@ -120,5 +122,6 @@ class AppRoutes {
     ),
     sendNotification: (_) => const SendNotificationScreen(),
     notificationCenter: (_) => const NotificationCenterScreen(),
+    debugFcm: (_) => const DebugFcmScreen(),
   };
 }

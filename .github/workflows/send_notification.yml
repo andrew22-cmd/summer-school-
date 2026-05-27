@@ -6,129 +6,77 @@ on:
       title:
         description: 'Notification title'
         required: true
-        type: string
       body:
         description: 'Notification body'
         required: true
-        type: string
       topic:
         description: 'FCM topic'
         required: true
-        type: string
-  repository_dispatch:
-    types: [send-notification]
 
 jobs:
   send-notification:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: 'notifications-backend/package-lock.json'
+          node-version: 20
 
-      - name: Install dependencies
+      - name: Create app folder
+        run: mkdir app
+
+      - name: Create package.json
         run: |
-          cd notifications-backend
-          # لو مفيش فايل اسمه package.json ومسبب مشكلة في الكاش، الـ install العادي هيتصرف
-          npm install firebase-admin --no-audit --no-fund
+          cd app
+          echo '{
+            "name":"fcm-sender",
+            "version":"1.0.0"
+          }' > package.json
 
-      - name: Create service account file
+      - name: Install firebase-admin
+        run: |
+          cd app
+          npm install firebase-admin
+
+      - name: Create service account
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: |
-          cd notifications-backend
+          cd app
           echo "$FIREBASE_SERVICE_ACCOUNT" > serviceAccountKey.json
-          echo "✅ Service account file created"
 
-      - name: Send FCM notification
-        env:
-          NOTIF_TITLE: ${{ github.event.inputs.title || github.event.client_payload.title }}
-          NOTIF_BODY: ${{ github.event.inputs.body || github.event.client_payload.body }}
-          NOTIF_TOPIC: ${{ github.event.inputs.topic || github.event.client_payload.topic }}
+      - name: Send notification
         run: |
-          cd notifications-backend
+          cd app
           node -e "
           const admin = require('firebase-admin');
           const serviceAccount = require('./serviceAccountKey.json');
 
-          function sanitizeTopic(rawTopic) {
-            const topic = String(rawTopic ?? '').trim();
-            // FCM topics must use ASCII-safe characters only.
-            // If the input contains Arabic/invalid chars, fall back to all_users.
-            const allowed = /^[A-Za-z0-9_.~-]+$/;
-            if (!topic || !allowed.test(topic)) {
-              console.log('⚠️ Invalid topic detected, falling back to all_users');
-              return 'all_users';
-            }
-            return topic;
-          }
-          
           admin.initializeApp({
-            credential: admin.credential.cert(serviceAccount),
+            credential: admin.credential.cert(serviceAccount)
           });
-          
-          (async () => {
-            try {
-              const safeTopic = sanitizeTopic(process.env.NOTIF_TOPIC);
 
-              console.log('📤 Sending FCM notification...');
-              console.log('   Title:', process.env.NOTIF_TITLE);
-              console.log('   Body:', process.env.NOTIF_BODY);
-              console.log('   Topic:', safeTopic);
-              
-              const message = {
+          async function send() {
+            try {
+              const response = await admin.messaging().send({
+                topic: '${{ github.event.inputs.topic }}',
                 notification: {
-                  title: process.env.NOTIF_TITLE,
-                  body: process.env.NOTIF_BODY,
+                  title: '${{ github.event.inputs.title }}',
+                  body: '${{ github.event.inputs.body }}'
                 },
                 android: {
-                  priority: 'high',
-                  notification: {
-                    channelId: 'high_importance_channel', // عدلناها هنا عشان تطابق الأندرويد
-                    priority: 'max',
-                    sound: 'default',
-                  },
-                },
-                apns: {
-                  payload: {
-                    aps: {
-                      sound: 'default',
-                    },
-                  },
-                },
-                topic: safeTopic,
-              };
-              
-              const response = await admin.messaging().send(message);
-              console.log('✅ Notification sent successfully!');
-              console.log('   Message ID:', response);
-              
-            } catch (error) {
-              console.error('❌ Failed to send notification:');
-              console.error('   Error:', error.message);
+                  priority: 'high'
+                }
+              });
+
+              console.log('SUCCESS:', response);
+            } catch (e) {
+              console.error('ERROR:', e);
               process.exit(1);
-            } finally {
-              process.exit(0);
             }
-          })();
+          }
+
+          send();
           "
 
-      - name: Cleanup
-        if: always()
-        run: |
-          cd notifications-backend
-          rm -f serviceAccountKey.json
-          echo "🧹 Cleaned up service account file"
-
-      - name: Notification result
-        if: success()
-        run: |
-          echo "🎉 FCM notification workflow completed successfully!"
-          echo "   Topic: ${{ github.event.inputs.topic || github.event.client_payload.topic }}"

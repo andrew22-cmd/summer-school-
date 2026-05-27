@@ -31,10 +31,13 @@ class FcmService {
 
   bool _initialized = false;
   String? _currentUserId;
+  String? _currentToken;
+  String? _permissionStatus;
+  String? _lastReceivedMessage;
 
   static const AndroidNotificationChannel _channel = AndroidNotificationChannel(
-    'summer_school_notifications',
-    'Summer School Notifications',
+    'high_importance_channel',
+    'High Importance Notifications',
     description: 'Foreground notifications for Summer School',
     importance: Importance.high,
   );
@@ -80,9 +83,20 @@ class FcmService {
       _saveTokenIfPossible(token);
     });
 
+    await _subscribeToTopics(<String>[
+      'all',
+      'all_users',
+      'members',
+      'member_managers',
+      'managers',
+    ]);
+
     final initialMessage = await _messaging.getInitialMessage();
     if (initialMessage != null) {
+      debugPrint('[FCM] getInitialMessage returned a message');
       _handleOpenedMessage(initialMessage);
+    } else {
+      debugPrint('[FCM] getInitialMessage returned null');
     }
 
     _initialized = true;
@@ -97,6 +111,7 @@ class FcmService {
       provisional: false,
     );
 
+    _permissionStatus = settings.authorizationStatus.name;
     debugPrint('[FCM] Permission status: ${settings.authorizationStatus}');
 
     await _messaging.setForegroundNotificationPresentationOptions(
@@ -112,6 +127,8 @@ class FcmService {
 
   Future<String?> getToken() async {
     final token = await _messaging.getToken();
+    _currentToken = token;
+    debugPrint('FCM TOKEN: $token');
     debugPrint('[FCM] Token generated: $token');
     return token;
   }
@@ -131,6 +148,7 @@ class FcmService {
     }, SetOptions(merge: true));
 
     debugPrint('[FCM] Token saved to Firestore for uid=${user.id}');
+    debugPrint('FCM token saved successfully');
   }
 
   Future<void> clearTokenForUser(String userId) async {
@@ -172,14 +190,19 @@ class FcmService {
 
     await unsubscribeFromTopics();
 
-    for (final topic in topics) {
-      await _messaging.subscribeToTopic(topic);
-      debugPrint('[FCM] Subscribed to topic: $topic');
-    }
+    await _subscribeToTopics(topics.toList());
 
     _subscribedTopics
       ..clear()
       ..addAll(topics);
+  }
+
+  Future<void> _subscribeToTopics(List<String> topics) async {
+    for (final topic in topics) {
+      await _messaging.subscribeToTopic(topic);
+      debugPrint('Subscribed to topic: $topic');
+      debugPrint('[FCM] Subscribed to topic: $topic');
+    }
   }
 
   Future<void> unsubscribeFromTopics() async {
@@ -198,6 +221,8 @@ class FcmService {
     debugPrint('[FCM][Foreground] title=${message.notification?.title}');
     debugPrint('[FCM][Foreground] body=${message.notification?.body}');
     debugPrint('[FCM][Foreground] data=${message.data}');
+    _lastReceivedMessage =
+        'title=${message.notification?.title}, body=${message.notification?.body}, data=${message.data}';
 
     final notification = message.notification;
     if (notification == null) return;
@@ -226,6 +251,8 @@ class FcmService {
     debugPrint('[FCM][Open] title=${message.notification?.title}');
     debugPrint('[FCM][Open] body=${message.notification?.body}');
     debugPrint('[FCM][Open] data=${message.data}');
+    _lastReceivedMessage =
+        'title=${message.notification?.title}, body=${message.notification?.body}, data=${message.data}';
   }
 
   Future<void> showTestNotification({
@@ -276,6 +303,15 @@ class FcmService {
       );
     }
   }
+
+  String? get currentToken => _currentToken;
+
+  String? get permissionStatus => _permissionStatus;
+
+  String? get lastReceivedMessage => _lastReceivedMessage;
+
+  List<String> get subscribedTopics =>
+      List<String>.unmodifiable(_subscribedTopics);
 
   String _normalizeTopic(String value) {
     return value.trim().toLowerCase().replaceAll(' ', '_');
