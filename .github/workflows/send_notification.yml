@@ -1,6 +1,20 @@
 name: Send Firebase Cloud Messaging Notification
 
 on:
+  workflow_dispatch:
+    inputs:
+      title:
+        description: 'Notification title'
+        required: true
+        type: string
+      body:
+        description: 'Notification body'
+        required: true
+        type: string
+      topic:
+        description: 'FCM topic'
+        required: true
+        type: string
   repository_dispatch:
     types: [send-notification]
 
@@ -35,10 +49,9 @@ jobs:
 
       - name: Send FCM notification
         env:
-          # بنجيب البيانات المبعوتة من الموبايل جوة الـ client_payload بتاع الـ API
-          NOTIF_TITLE: ${{ github.event.client_payload.title }}
-          NOTIF_BODY: ${{ github.event.client_payload.body }}
-          NOTIF_TOPIC: ${{ github.event.client_payload.topic }}
+          NOTIF_TITLE: ${{ github.event.inputs.title || github.event.client_payload.title }}
+          NOTIF_BODY: ${{ github.event.inputs.body || github.event.client_payload.body }}
+          NOTIF_TOPIC: ${{ github.event.inputs.topic || github.event.client_payload.topic }}
         run: |
           cd notifications-backend
           node -e "
@@ -104,4 +117,4 @@ jobs:
         if: success()
         run: |
           echo "🎉 FCM notification workflow completed successfully!"
-          echo "   Topic: ${{ github.event.client_payload.topic }}"
+          echo "   Topic: ${{ github.event.inputs.topic || github.event.client_payload.topic }}"
