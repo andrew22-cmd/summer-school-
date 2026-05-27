@@ -57,6 +57,18 @@ jobs:
           node -e "
           const admin = require('firebase-admin');
           const serviceAccount = require('./serviceAccountKey.json');
+
+          function sanitizeTopic(rawTopic) {
+            const topic = String(rawTopic ?? '').trim();
+            // FCM topics must use ASCII-safe characters only.
+            // If the input contains Arabic/invalid chars, fall back to all_users.
+            const allowed = /^[A-Za-z0-9_.~-]+$/;
+            if (!topic || !allowed.test(topic)) {
+              console.log('⚠️ Invalid topic detected, falling back to all_users');
+              return 'all_users';
+            }
+            return topic;
+          }
           
           admin.initializeApp({
             credential: admin.credential.cert(serviceAccount),
@@ -64,10 +76,12 @@ jobs:
           
           (async () => {
             try {
+              const safeTopic = sanitizeTopic(process.env.NOTIF_TOPIC);
+
               console.log('📤 Sending FCM notification...');
               console.log('   Title:', process.env.NOTIF_TITLE);
               console.log('   Body:', process.env.NOTIF_BODY);
-              console.log('   Topic:', process.env.NOTIF_TOPIC);
+              console.log('   Topic:', safeTopic);
               
               const message = {
                 notification: {
@@ -89,7 +103,7 @@ jobs:
                     },
                   },
                 },
-                topic: process.env.NOTIF_TOPIC,
+                topic: safeTopic,
               };
               
               const response = await admin.messaging().send(message);
