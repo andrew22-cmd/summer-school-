@@ -1,4 +1,4 @@
-name: Send Firebase Cloud Messaging Notification
+﻿name: Send Firebase Cloud Messaging Notification
 
 on:
   workflow_dispatch:
@@ -6,12 +6,15 @@ on:
       title:
         description: 'Notification title'
         required: true
+        type: string
       body:
         description: 'Notification body'
         required: true
+        type: string
       topic:
         description: 'FCM topic'
         required: true
+        type: string
 
 jobs:
   send-notification:
@@ -21,34 +24,22 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-
-      - name: Create app folder
-        run: mkdir app
-
-      - name: Create package.json
-        run: |
-          cd app
-          echo '{
-            "name":"fcm-sender",
-            "version":"1.0.0"
-          }' > package.json
+          node-version: 22
 
       - name: Install firebase-admin
-        run: |
-          cd app
-          npm install firebase-admin
+        run: npm install firebase-admin
 
       - name: Create service account
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-        run: |
-          cd app
-          echo "$FIREBASE_SERVICE_ACCOUNT" > serviceAccountKey.json
+        run: echo "$FIREBASE_SERVICE_ACCOUNT" > serviceAccountKey.json
 
       - name: Send notification
+        env:
+          NOTIF_TITLE: ${{ github.event.inputs.title }}
+          NOTIF_BODY: ${{ github.event.inputs.body }}
+          NOTIF_TOPIC: ${{ github.event.inputs.topic }}
         run: |
-          cd app
           node -e "
           const admin = require('firebase-admin');
           const serviceAccount = require('./serviceAccountKey.json');
@@ -59,20 +50,31 @@ jobs:
 
           async function send() {
             try {
-              const response = await admin.messaging().send({
-                topic: '${{ github.event.inputs.topic }}',
+              const message = {
+                topic: process.env.NOTIF_TOPIC,
                 notification: {
-                  title: '${{ github.event.inputs.title }}',
-                  body: '${{ github.event.inputs.body }}'
+                  title: process.env.NOTIF_TITLE,
+                  body: process.env.NOTIF_BODY
+                },
+                data: {
+                  click_action: 'FLUTTER_NOTIFICATION_CLICK',
+                  source: 'github_actions'
                 },
                 android: {
                   priority: 'high'
                 }
-              });
+              };
 
-              console.log('SUCCESS:', response);
+              console.log('TARGET_TOPIC:', process.env.NOTIF_TOPIC);
+              console.log('SENDING_MESSAGE:', JSON.stringify(message, null, 2));
+
+              const response = await admin.messaging().send(message);
+              console.log('SUCCESS: Firebase response =', response);
             } catch (e) {
-              console.error('ERROR:', e);
+              console.error('ERROR_NAME:', e?.name || 'UnknownError');
+              console.error('ERROR_MESSAGE:', e?.message || String(e));
+              console.error('ERROR_STACK:', e?.stack || 'No stack');
+              console.error('ERROR_FULL:', e);
               process.exit(1);
             }
           }
@@ -80,3 +82,6 @@ jobs:
           send();
           "
 
+      - name: Cleanup
+        if: always()
+        run: rm -f serviceAccountKey.json

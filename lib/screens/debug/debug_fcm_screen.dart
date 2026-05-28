@@ -18,7 +18,9 @@ class _DebugFcmScreenState extends State<DebugFcmScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final fcm = context.read<FcmService>();
-      debugPrint('[FCM][DebugScreen] Exact current token: ${fcm.currentToken}');
+      debugPrint(
+        '[FCM][DebugScreen] EXACT CURRENT TOKEN => ${fcm.currentToken}',
+      );
     });
   }
 
@@ -62,7 +64,7 @@ class _DebugFcmScreenState extends State<DebugFcmScreen> {
                   ? null
                   : () async {
                       debugPrint(
-                        '[FCM][DebugScreen] Copying exact token: ${fcm.currentToken}',
+                        '[FCM][DebugScreen] COPY TOKEN => ${fcm.currentToken}',
                       );
                       await Clipboard.setData(
                         ClipboardData(text: fcm.currentToken!),
