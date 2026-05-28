@@ -28,7 +28,7 @@ import 'services/points_service.dart';
 //(done) in add points must select reason and points counted on this reason
 // (done)when any operation made on points must make it in table due to  overflow of data
 // where I need to make it pdf good for printing
-
+// gembeooyny -->imp
 //(done) in visits member can visit total 2 in month and date that he visit in can manager and mebermanager see it
 // (done)attendance of members
 

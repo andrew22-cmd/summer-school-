@@ -71,7 +71,7 @@ class _MyTasksScreenState extends State<MyTasksScreen> {
             : taskProvider.myTasksError != null
             ? Center(child: Text('Error: ${taskProvider.myTasksError}'))
             : taskProvider.myTasks.isEmpty
-            ? const Center(child: Text('لا توجد تاسكات حالياً'))
+            ? const Center(child: Text('No tasks available right now'))
             : ListView.builder(
                 padding: const EdgeInsets.all(16),
                 itemCount: taskProvider.myTasks.length,

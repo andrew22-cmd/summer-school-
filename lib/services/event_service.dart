@@ -32,8 +32,8 @@ class EventService {
           await _notificationService.createAutomaticNotification(
             sender: senderUserModel,
             type: 'event',
-            title: 'حدث جديد',
-            body: 'تم إضافة حدث جديد: ${event.title}',
+            title: 'New Event',
+            body: 'A new event was added: ${event.title}',
             relatedId: event.id,
           );
         } catch (e) {

@@ -32,28 +32,28 @@ class _AddPointsScreenState extends State<AddPointsScreen> {
   String? _selectedAddReasonKey;
 
   static const List<_AddReasonOption> _addReasonOptions = [
-    _AddReasonOption('monthly_meeting', 'حضور اللقاء الشهري', 50),
-    _AddReasonOption('monthly_training', 'التدريب الشهري', 50),
-    _AddReasonOption('spiritual_notebook', 'النوتة الروحية', 50),
-    _AddReasonOption('memorization', 'الحفظ', null),
-    _AddReasonOption('lent_competition', 'مسابقة الصوم الكبير', 100),
-    _AddReasonOption('monthly_book', 'الكتاب الشهري', 100),
+    _AddReasonOption('monthly_meeting', 'Monthly Meeting Attendance', 50),
+    _AddReasonOption('monthly_training', 'Monthly Training', 50),
+    _AddReasonOption('spiritual_notebook', 'Spiritual Notebook', 50),
+    _AddReasonOption('memorization', 'Memorization', null),
+    _AddReasonOption('lent_competition', 'Great Lent Competition', 100),
+    _AddReasonOption('monthly_book', 'Monthly Book', 100),
     _AddReasonOption(
       'events_attendance',
-      'حضور المناسبات (كيهك / أسبوع الآلام)',
+      'Events Attendance (Kiahk / Holy Week)',
       50,
     ),
-    _AddReasonOption('readings_prayer', 'تنزيل القراءات والصلاة', 20),
-    _AddReasonOption('group_encouragement', 'التشجيع على الجروب', 10),
-    _AddReasonOption('talents', 'المواهب', 10),
-    _AddReasonOption('anti_doubt_video', 'فيديو حتى لا نتشكك', 20),
+    _AddReasonOption('readings_prayer', 'Readings and Prayer', 20),
+    _AddReasonOption('group_encouragement', 'Group Encouragement', 10),
+    _AddReasonOption('talents', 'Talents', 10),
+    _AddReasonOption('anti_doubt_video', 'Anti-Doubt Video', 20),
     _AddReasonOption(
       'participation_commitment',
-      'المشاركة / الالتزام / التعاون / الطاعة',
+      'Participation / Commitment / Cooperation / Obedience',
       10,
     ),
-    _AddReasonOption('gpo_competition', 'مسابقة جيم بي أو', null),
-    _AddReasonOption('leader_of_day', 'قائد اليوم', 50),
+    _AddReasonOption('gpo_competition', 'GPO Competition', null),
+    _AddReasonOption('leader_of_day', 'Leader of the Day', 50),
     _AddReasonOption('other', 'Other', null),
   ];
 
@@ -280,7 +280,7 @@ class _AddPointsScreenState extends State<AddPointsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Text(
-                          'الطايوهات',
+                          'Points',
                           style: Theme.of(context).textTheme.headlineSmall
                               ?.copyWith(
                                 fontWeight: FontWeight.w800,
@@ -348,7 +348,7 @@ class _AddPointsScreenState extends State<AddPointsScreen> {
                                   borderRadius: BorderRadius.circular(14),
                                 ),
                                 child: Text(
-                                  'Current total: $liveTotal طايو',
+                                  'Current total: $liveTotal points',
                                   style: const TextStyle(
                                     fontWeight: FontWeight.w700,
                                   ),

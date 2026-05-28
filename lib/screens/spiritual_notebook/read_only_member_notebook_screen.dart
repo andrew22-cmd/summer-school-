@@ -19,23 +19,23 @@ class ReadOnlyMemberNotebookScreen extends StatefulWidget {
 class _ReadOnlyMemberNotebookScreenState
     extends State<ReadOnlyMemberNotebookScreen> {
   static const List<Map<String, String>> columns = [
-    {'label': 'باكر', 'key': 'baker'},
-    {'label': 'نوم', 'key': 'sleepPrayer'},
-    {'label': 'تناول', 'key': 'communion'},
-    {'label': 'عهد جديد', 'key': 'newTestament'},
-    {'label': 'عهد قديم', 'key': 'oldTestament'},
-    {'label': 'قداس', 'key': 'mass'},
-    {'label': 'اعتراف', 'key': 'confession'},
+    {'label': 'Morning Prayer', 'key': 'baker'},
+    {'label': 'Sleep Prayer', 'key': 'sleepPrayer'},
+    {'label': 'Communion', 'key': 'communion'},
+    {'label': 'New Testament', 'key': 'newTestament'},
+    {'label': 'Old Testament', 'key': 'oldTestament'},
+    {'label': 'Mass', 'key': 'mass'},
+    {'label': 'Confession', 'key': 'confession'},
   ];
 
   static const List<Map<String, String>> days = [
-    {'label': 'السبت', 'key': 'saturday'},
-    {'label': 'الأحد', 'key': 'sunday'},
-    {'label': 'الاثنين', 'key': 'monday'},
-    {'label': 'الثلاثاء', 'key': 'tuesday'},
-    {'label': 'الأربعاء', 'key': 'wednesday'},
-    {'label': 'الخميس', 'key': 'thursday'},
-    {'label': 'الجمعة', 'key': 'friday'},
+    {'label': 'Saturday', 'key': 'saturday'},
+    {'label': 'Sunday', 'key': 'sunday'},
+    {'label': 'Monday', 'key': 'monday'},
+    {'label': 'Tuesday', 'key': 'tuesday'},
+    {'label': 'Wednesday', 'key': 'wednesday'},
+    {'label': 'Thursday', 'key': 'thursday'},
+    {'label': 'Friday', 'key': 'friday'},
   ];
 
   String _formatDate(DateTime d) =>
@@ -200,13 +200,13 @@ class _ReadOnlyMemberNotebookScreenState
   String _arabicDay(int weekday) {
     const days = [
       '',
-      'الاثنين',
-      'الثلاثاء',
-      'الأربعاء',
-      'الخميس',
-      'الجمعة',
-      'السبت',
-      'الأحد',
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday',
     ];
     return days[weekday];
   }

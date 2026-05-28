@@ -1,0 +1,44 @@
+name: Daily Event Reminders
+
+on:
+  schedule:
+    - cron: '0 7 * * *' # runs daily at 07:00 UTC (10:00 Cairo)
+  workflow_dispatch: {}
+
+jobs:
+  send-reminders:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        working-directory: notifications-backend
+        run: |
+          npm ci || npm install
+
+      - name: Create service account file from secret
+        working-directory: notifications-backend
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then echo "Missing FIREBASE_SERVICE_ACCOUNT secret" && exit 1; fi
+          echo "$FIREBASE_SERVICE_ACCOUNT" > serviceAccount.json
+
+      - name: Run reminder script
+        working-directory: notifications-backend
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/notifications-backend/serviceAccount.json
+        run: |
+          node ./scripts/send_event_reminders.js
+
+      - name: Upload logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reminder-logs
+          path: notifications-backend/logs || '.'

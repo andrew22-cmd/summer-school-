@@ -35,7 +35,9 @@ class _SendNotificationScreenState extends State<SendNotificationScreen> {
     if (user == null) return;
     if (user.role == UserRole.member) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('غير مسموح لك بإرسال إشعارات.')),
+        const SnackBar(
+          content: Text('You are not allowed to send notifications.'),
+        ),
       );
       return;
     }
@@ -45,7 +47,7 @@ class _SendNotificationScreenState extends State<SendNotificationScreen> {
 
     if (title.isEmpty || body.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('الرجاء إدخال العنوان والمحتوى.')),
+        const SnackBar(content: Text('Please enter title and message.')),
       );
       return;
     }
@@ -56,7 +58,7 @@ class _SendNotificationScreenState extends State<SendNotificationScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'عند اختيار مراحل فقط سيتم الإرسال لكل الأدوار داخل هذه المراحل.',
+            'If you select stages only, notifications will be sent to all roles within those stages.',
           ),
         ),
       );
@@ -87,7 +89,7 @@ class _SendNotificationScreenState extends State<SendNotificationScreen> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('تم إرسال الإشعار داخل التطبيق بنجاح.'),
+            content: Text('In-app notification sent successfully.'),
             backgroundColor: Colors.green,
           ),
         );
@@ -96,7 +98,7 @@ class _SendNotificationScreenState extends State<SendNotificationScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('خطأ: ${e.toString()}'),
+            content: Text('Error: ${e.toString()}'),
             backgroundColor: Colors.red,
           ),
         );
@@ -113,7 +115,7 @@ class _SendNotificationScreenState extends State<SendNotificationScreen> {
     final isManager = user?.role == UserRole.manager;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('إرسال إشعار داخلي')),
+      appBar: AppBar(title: const Text('Send In-App Notification')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(14),
         child: Column(
@@ -123,7 +125,9 @@ class _SendNotificationScreenState extends State<SendNotificationScreen> {
               const Card(
                 child: Padding(
                   padding: EdgeInsets.all(16),
-                  child: Text('هذه الصفحة متاحة للمدير ومدير الفصل فقط.'),
+                  child: Text(
+                    'This page is available to managers and member managers only.',
+                  ),
                 ),
               )
             else ...[
@@ -143,7 +147,7 @@ class _SendNotificationScreenState extends State<SendNotificationScreen> {
                       TextField(
                         controller: _titleController,
                         decoration: InputDecoration(
-                          labelText: 'العنوان',
+                          labelText: 'Title',
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
@@ -156,7 +160,7 @@ class _SendNotificationScreenState extends State<SendNotificationScreen> {
                       TextField(
                         controller: _bodyController,
                         decoration: InputDecoration(
-                          labelText: 'المحتوى',
+                          labelText: 'Message',
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
@@ -169,9 +173,9 @@ class _SendNotificationScreenState extends State<SendNotificationScreen> {
                         contentPadding: EdgeInsets.zero,
                         value: _isImportant,
                         onChanged: (v) => setState(() => _isImportant = v),
-                        title: const Text('إشعار مهم'),
+                        title: const Text('Important Notification'),
                         subtitle: const Text(
-                          'سيظهر بعلامة مميزة في مركز الإشعارات.',
+                          'It will be marked as important in Notification Center.',
                         ),
                         secondary: Icon(
                           _isImportant
@@ -196,7 +200,9 @@ class _SendNotificationScreenState extends State<SendNotificationScreen> {
                   ),
                   child: const Padding(
                     padding: EdgeInsets.all(14),
-                    child: Text('سيتم الإرسال إلى أعضاء فصلك فقط تلقائياً.'),
+                    child: Text(
+                      'It will be sent automatically to members in your class only.',
+                    ),
                   ),
                 ),
               const SizedBox(height: 12),
@@ -209,9 +215,7 @@ class _SendNotificationScreenState extends State<SendNotificationScreen> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.send_rounded),
-                label: Text(
-                  _isLoading ? 'جارٍ الإرسال...' : 'إرسال داخل التطبيق',
-                ),
+                label: Text(_isLoading ? 'Sending...' : 'Send In-App'),
                 style: FilledButton.styleFrom(
                   minimumSize: const Size.fromHeight(48),
                 ),
@@ -225,9 +229,9 @@ class _SendNotificationScreenState extends State<SendNotificationScreen> {
 
   Widget _buildManagerTargetsCard(BuildContext context) {
     final roleOptions = <MapEntry<String, String>>[
-      MapEntry(UserRole.manager.value, 'المديرون'),
-      MapEntry(UserRole.memberManager.value, 'مديرو الفصول'),
-      MapEntry(UserRole.member.value, 'الأعضاء'),
+      MapEntry(UserRole.manager.value, 'Managers'),
+      MapEntry(UserRole.memberManager.value, 'Member Managers'),
+      MapEntry(UserRole.member.value, 'Members'),
     ];
 
     return Card(
@@ -242,7 +246,7 @@ class _SendNotificationScreenState extends State<SendNotificationScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'الأدوار المستهدفة',
+              'Target Roles',
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
@@ -268,7 +272,7 @@ class _SendNotificationScreenState extends State<SendNotificationScreen> {
             ),
             const SizedBox(height: 14),
             Text(
-              'المراحل المستهدفة',
+              'Target Stages',
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
@@ -277,7 +281,7 @@ class _SendNotificationScreenState extends State<SendNotificationScreen> {
               builder: (context, snap) {
                 final stages = snap.data ?? const <String>[];
                 if (stages.isEmpty) {
-                  return const Text('لا توجد مراحل متاحة حالياً.');
+                  return const Text('No stages are currently available.');
                 }
                 return Wrap(
                   spacing: 8,
@@ -303,7 +307,7 @@ class _SendNotificationScreenState extends State<SendNotificationScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'إذا لم يتم تحديد أي دور أو مرحلة، سيتم الإرسال للجميع.',
+              'If no role or stage is selected, it will be sent to everyone.',
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ],

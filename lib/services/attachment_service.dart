@@ -196,8 +196,8 @@ class AttachmentService {
             await notificationService.createAutomaticNotification(
               sender: senderUserModel,
               type: 'attachment',
-              title: 'ملف جديد',
-              body: 'تم رفع ملف جديد: $title',
+              title: 'New File',
+              body: 'A new file was uploaded: $title',
               targetRoles: targetRoles,
               targetStages: targetStages,
               relatedId: docRef.id,
@@ -317,8 +317,8 @@ class AttachmentService {
             await notificationService.createAutomaticNotification(
               sender: senderUserModel,
               type: 'attachment',
-              title: 'ملف جديد',
-              body: 'تم رفع ملف جديد: $title',
+              title: 'New File',
+              body: 'A new file was uploaded: $title',
               targetRoles: targetRoles,
               targetStages: targetStages,
               relatedId: docRef.id,

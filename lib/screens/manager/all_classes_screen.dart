@@ -68,13 +68,6 @@ class AllClassesScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Choose a class to monitor (read only)',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
                   Expanded(
                     child: GridView.builder(
                       itemCount: _stages.length,

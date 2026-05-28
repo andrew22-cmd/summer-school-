@@ -58,13 +58,13 @@ class _WeeklyScheduleScreenState extends State<WeeklyScheduleScreen> {
     return ChangeNotifierProvider<WeeklyScheduleProvider>.value(
       value: _provider,
       child: Directionality(
-        textDirection: TextDirection.rtl,
+        textDirection: TextDirection.ltr,
         child: Scaffold(
           backgroundColor: AppColors.surfaceSoft,
           appBar: AppBar(
             backgroundColor: Colors.white,
             foregroundColor: AppColors.primary,
-            title: const Text('جدول المرحلة الأسبوعي'),
+            title: const Text('Weekly Stage Schedule'),
           ),
           floatingActionButton: canManage
               ? FloatingActionButton(
@@ -106,7 +106,7 @@ class _WeeklyScheduleScreenState extends State<WeeklyScheduleScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'اليوم الحالي: ${WeeklyScheduleDays.arabicLabel(context.watch<WeeklyScheduleProvider>().selectedDay)} - ${intl.DateFormat('yyyy/MM/dd').format(_dateForSelectedDay(context.watch<WeeklyScheduleProvider>().selectedDay))}',
+                        'Current day: ${WeeklyScheduleDays.arabicLabel(context.watch<WeeklyScheduleProvider>().selectedDay)} - ${intl.DateFormat('yyyy/MM/dd').format(_dateForSelectedDay(context.watch<WeeklyScheduleProvider>().selectedDay))}',
                         style: const TextStyle(fontWeight: FontWeight.w700),
                       ),
                       const SizedBox(height: 10),
@@ -116,7 +116,7 @@ class _WeeklyScheduleScreenState extends State<WeeklyScheduleScreen> {
                             if (stage.trim().isEmpty) {
                               return const _EmptyMessage(
                                 message:
-                                    'المرحلة غير محددة لهذا المستخدم. لا يمكن تحميل الجدول.',
+                                    'Stage is not set for this user. Schedule cannot be loaded.',
                               );
                             }
 
@@ -134,7 +134,7 @@ class _WeeklyScheduleScreenState extends State<WeeklyScheduleScreen> {
                             if (provider.items.isEmpty) {
                               return const _EmptyMessage(
                                 message:
-                                    'لا توجد عناصر في هذا اليوم بعد. اضغط + لإضافة عنصر جديد.',
+                                    'No items for this day yet. Press + to add a new item.',
                               );
                             }
 
@@ -220,8 +220,8 @@ class _WeeklyScheduleScreenState extends State<WeeklyScheduleScreen> {
       initialDate: _selectedWeekStart,
       firstDate: DateTime(2020),
       lastDate: DateTime(2100),
-      helpText: 'اختر أي تاريخ في الأسبوع',
-      locale: const Locale('ar'),
+      helpText: 'Pick any date in the week',
+      locale: const Locale('en'),
     );
     if (picked == null || !mounted) return;
 
@@ -276,7 +276,7 @@ class _WeekSelectorCard extends StatelessWidget {
       child: Row(
         children: [
           IconButton(
-            tooltip: 'الأسبوع السابق',
+            tooltip: 'Previous week',
             onPressed: onPreviousWeek,
             icon: const Icon(Icons.chevron_right_rounded),
           ),
@@ -289,7 +289,7 @@ class _WeekSelectorCard extends StatelessWidget {
                 child: Column(
                   children: [
                     const Text(
-                      'الأسبوع المحدد',
+                      'Selected week',
                       style: TextStyle(fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 4),
@@ -304,7 +304,7 @@ class _WeekSelectorCard extends StatelessWidget {
             ),
           ),
           IconButton(
-            tooltip: 'الأسبوع التالي',
+            tooltip: 'Next week',
             onPressed: onNextWeek,
             icon: const Icon(Icons.chevron_left_rounded),
           ),
@@ -346,11 +346,11 @@ class _HeaderCard extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           const Text(
-            'جدول المرحلة الأسبوعي',
+            'Weekly Stage Schedule',
             style: TextStyle(color: Colors.white70),
           ),
           const SizedBox(height: 8),
-          Text('المرحلة: $stage', style: const TextStyle(color: Colors.white)),
+          Text('Stage: $stage', style: const TextStyle(color: Colors.white)),
         ],
       ),
     );
@@ -378,7 +378,7 @@ class _DayToggle extends StatelessWidget {
         children: [
           Expanded(
             child: _DayButton(
-              label: 'الأحد\nSunday',
+              label: 'Sunday',
               selected: selectedDay == WeeklyScheduleDays.sunday,
               selectedColor: selectedColor,
               onTap: () => onChanged(WeeklyScheduleDays.sunday),
@@ -387,7 +387,7 @@ class _DayToggle extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: _DayButton(
-              label: 'الأربعاء\nWednesday',
+              label: 'Wednesday',
               selected: selectedDay == WeeklyScheduleDays.wednesday,
               selectedColor: selectedColor,
               onTap: () => onChanged(WeeklyScheduleDays.wednesday),

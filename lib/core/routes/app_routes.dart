@@ -20,6 +20,8 @@ import 'package:summerschool/services/firestore_user_service.dart';
 import 'package:summerschool/screens/events/events_screen.dart';
 import 'package:summerschool/screens/events/add_event_screen.dart';
 import 'package:summerschool/screens/events/manage_events_screen.dart';
+import 'package:summerschool/providers/event_provider.dart';
+import 'package:summerschool/services/event_service.dart';
 import 'package:summerschool/screens/spiritual_notebook/spiritual_notebook_screen.dart';
 import 'package:summerschool/screens/spiritual_notebook/members_notebook_selection_screen.dart';
 import 'package:summerschool/providers/spiritual_notebook_provider.dart';
@@ -85,7 +87,10 @@ class AppRoutes {
     profile: (_) => const ProfileScreen(),
     events: (_) => const EventsScreen(),
     classMembers: (context) => const ClassMembersScreen(),
-    addEvent: (context) => const AddEventScreen(),
+    addEvent: (context) => ChangeNotifierProvider<EventProvider>(
+      create: (_) => EventProvider(EventService()),
+      child: const AddEventScreen(),
+    ),
     manageEvents: (context) => const ManageEventsScreen(),
     points: (_) => ChangeNotifierProvider<PointsProvider>(
       create: (_) => PointsProvider(PointsService()),

@@ -49,14 +49,16 @@ class _ServantsAttendanceScreenState extends State<ServantsAttendanceScreen> {
 
     if (!auth.isMember && !auth.isMemberManager && !auth.isManager) {
       return const Scaffold(
-        body: Center(child: Text('غير مسموح لك بعرض غياب الخدام.')),
+        body: Center(
+          child: Text('You are not allowed to view servants attendance.'),
+        ),
       );
     }
 
     final width = MediaQuery.sizeOf(context).width;
     final dateLabel = DateFormat(
       'EEEE - d MMMM yyyy',
-      'ar',
+      'en',
     ).format(provider.selectedDate);
 
     return Scaffold(
@@ -64,7 +66,7 @@ class _ServantsAttendanceScreenState extends State<ServantsAttendanceScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         foregroundColor: AppColors.primary,
-        title: const Text('غياب الخدام'),
+        title: const Text('Servants Attendance'),
         actions: [
           if (provider.canEdit) ...[
             TextButton.icon(
@@ -82,13 +84,15 @@ class _ServantsAttendanceScreenState extends State<ServantsAttendanceScreen> {
                         if (!context.mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text('تم حفظ حضور الخدام بنجاح.'),
+                            content: Text(
+                              'Servants attendance saved successfully.',
+                            ),
                           ),
                         );
                       } catch (e) {
                         if (!context.mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('فشل الحفظ: $e')),
+                          SnackBar(content: Text('Save failed: $e')),
                         );
                       }
                     }
@@ -165,7 +169,7 @@ class _ServantsAttendanceScreenState extends State<ServantsAttendanceScreen> {
                                         : provider.selectedStage,
                                     isExpanded: true,
                                     decoration: const InputDecoration(
-                                      labelText: 'المرحلة',
+                                      labelText: 'Stage',
                                       border: OutlineInputBorder(),
                                       isDense: true,
                                     ),
@@ -184,7 +188,7 @@ class _ServantsAttendanceScreenState extends State<ServantsAttendanceScreen> {
                                   ),
                                 )
                               else
-                                Text('المرحلة: ${provider.selectedStage}'),
+                                Text('Stage: ${provider.selectedStage}'),
                             ],
                           ),
                         ],
@@ -200,7 +204,7 @@ class _ServantsAttendanceScreenState extends State<ServantsAttendanceScreen> {
                         onChanged: provider.setSearch,
                         decoration: InputDecoration(
                           prefixIcon: const Icon(Icons.search_rounded),
-                          hintText: 'بحث باسم الخادم',
+                          hintText: 'Search by servant name',
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -218,7 +222,7 @@ class _ServantsAttendanceScreenState extends State<ServantsAttendanceScreen> {
                         ? Center(child: Text(provider.error!))
                         : provider.servants.isEmpty
                         ? const Center(
-                            child: Text('لا يوجد خدام في هذه المرحلة.'),
+                            child: Text('No servants found in this stage.'),
                           )
                         : ListView.separated(
                             physics: const BouncingScrollPhysics(),
@@ -234,8 +238,8 @@ class _ServantsAttendanceScreenState extends State<ServantsAttendanceScreen> {
                                   ? 'member manager'
                                   : 'member';
                               final roleLabelAr = servant.isMemberManager
-                                  ? 'مسؤول خدام'
-                                  : 'خادم';
+                                  ? 'Servant Supervisor'
+                                  : 'Servant';
 
                               return Card(
                                 elevation: 0,

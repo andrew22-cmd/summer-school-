@@ -29,7 +29,7 @@ class _TaskHistoryDashboardScreenState
     'overdue',
   ];
 
-  final List<String> _stages = ['مرحلة أولى', 'مرحلة ثانية', 'مرحلة ثالثة'];
+  final List<String> _stages = ['Stage One', 'Stage Two', 'Stage Three'];
   final List<String> _roles = [
     UserRole.member.value,
     UserRole.memberManager.value,
@@ -72,13 +72,13 @@ class _TaskHistoryDashboardScreenState
   String _getStatusArabic(String status) {
     switch (status) {
       case 'pending':
-        return 'قيد الانتظار';
+        return 'Pending';
       case 'in_progress':
-        return 'جاري';
+        return 'In Progress';
       case 'completed':
-        return 'مكتمل';
+        return 'Completed';
       case 'overdue':
-        return 'متأخر';
+        return 'Overdue';
       default:
         return status;
     }
@@ -128,12 +128,12 @@ class _TaskHistoryDashboardScreenState
     return showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('حذف المهمة'),
-        content: Text('هل أنت متأكد من حذف المهمة: ${task.title}؟'),
+        title: const Text('Delete Task'),
+        content: Text('Are you sure you want to delete task: ${task.title}?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('إلغاء'),
+            child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () async {
@@ -151,7 +151,7 @@ class _TaskHistoryDashboardScreenState
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('تم حذف المهمة بنجاح'),
+                        content: Text('Task deleted successfully'),
                         backgroundColor: Colors.green,
                       ),
                     );
@@ -161,14 +161,14 @@ class _TaskHistoryDashboardScreenState
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('خطأ: $e'),
+                      content: Text('Error: $e'),
                       backgroundColor: Colors.red,
                     ),
                   );
                 }
               }
             },
-            child: const Text('حذف', style: TextStyle(color: Colors.red)),
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -179,7 +179,7 @@ class _TaskHistoryDashboardScreenState
     return showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('تغيير حالة المهمة'),
+        title: const Text('Change Task Status'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: _statuses
@@ -206,7 +206,7 @@ class _TaskHistoryDashboardScreenState
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(
-                                  'تم تحديث الحالة إلى ${_getStatusArabic(value)}',
+                                  'Status updated to ${_getStatusArabic(value)}',
                                 ),
                                 backgroundColor: Colors.green,
                               ),
@@ -217,7 +217,7 @@ class _TaskHistoryDashboardScreenState
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text('خطأ: $e'),
+                              content: Text('Error: $e'),
                               backgroundColor: Colors.red,
                             ),
                           );
@@ -232,7 +232,7 @@ class _TaskHistoryDashboardScreenState
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('إغلاق'),
+            child: const Text('Close'),
           ),
         ],
       ),
@@ -247,13 +247,13 @@ class _TaskHistoryDashboardScreenState
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('لوحة متابعة المهام'),
+        title: const Text('Task Tracking Dashboard'),
         centerTitle: true,
         backgroundColor: const Color(0xFF0D3B66),
         foregroundColor: Colors.white,
       ),
       body: currentUser == null
-          ? const Center(child: Text('الرجاء تسجيل الدخول'))
+          ? const Center(child: Text('Please sign in'))
           : Column(
               children: [
                 // Search Bar
@@ -263,7 +263,7 @@ class _TaskHistoryDashboardScreenState
                     controller: _searchController,
                     onChanged: _onSearchChanged,
                     decoration: InputDecoration(
-                      hintText: 'ابحث عن المهام أو المستخدمين',
+                      hintText: 'Search tasks or users',
                       prefixIcon: const Icon(Icons.search),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
@@ -287,7 +287,7 @@ class _TaskHistoryDashboardScreenState
                         child: DropdownButtonFormField<String>(
                           isExpanded: true,
                           decoration: const InputDecoration(
-                            labelText: 'الحالة',
+                            labelText: 'Status',
                             border: OutlineInputBorder(),
                           ),
                           value: _selectedStatus.isEmpty
@@ -297,7 +297,7 @@ class _TaskHistoryDashboardScreenState
                           items: [
                             const DropdownMenuItem(
                               value: '',
-                              child: Text('كل الحالات'),
+                              child: Text('All Statuses'),
                             ),
                             ..._statuses.map(
                               (status) => DropdownMenuItem(
@@ -313,7 +313,7 @@ class _TaskHistoryDashboardScreenState
                         child: DropdownButtonFormField<String>(
                           isExpanded: true,
                           decoration: const InputDecoration(
-                            labelText: 'المرحلة',
+                            labelText: 'Stage',
                             border: OutlineInputBorder(),
                           ),
                           value: _selectedStage.isEmpty ? null : _selectedStage,
@@ -321,7 +321,7 @@ class _TaskHistoryDashboardScreenState
                           items: [
                             const DropdownMenuItem(
                               value: '',
-                              child: Text('كل المراحل'),
+                              child: Text('All Stages'),
                             ),
                             ..._stages.map(
                               (stage) => DropdownMenuItem(
@@ -337,7 +337,7 @@ class _TaskHistoryDashboardScreenState
                         child: DropdownButtonFormField<String>(
                           isExpanded: true,
                           decoration: const InputDecoration(
-                            labelText: 'الدور',
+                            labelText: 'Role',
                             border: OutlineInputBorder(),
                           ),
                           value: _selectedRole.isEmpty ? null : _selectedRole,
@@ -345,7 +345,7 @@ class _TaskHistoryDashboardScreenState
                           items: [
                             const DropdownMenuItem(
                               value: '',
-                              child: Text('كل الأدوار'),
+                              child: Text('All Roles'),
                             ),
                             ..._roles.map(
                               (role) => DropdownMenuItem(
@@ -361,7 +361,7 @@ class _TaskHistoryDashboardScreenState
                           _selectedRole.isNotEmpty)
                         IconButton(
                           icon: const Icon(Icons.filter_alt_off),
-                          tooltip: 'إعادة تعيين الفلاتر',
+                          tooltip: 'Reset Filters',
                           onPressed: () {
                             setState(() {
                               _selectedStatus = '';
@@ -381,10 +381,10 @@ class _TaskHistoryDashboardScreenState
                       ? const Center(child: CircularProgressIndicator())
                       : taskProvider.allTasksError != null
                       ? Center(
-                          child: Text('خطأ: ${taskProvider.allTasksError}'),
+                          child: Text('Error: ${taskProvider.allTasksError}'),
                         )
                       : taskProvider.allTasks.isEmpty
-                      ? const Center(child: Text('لا توجد مهام'))
+                      ? const Center(child: Text('No tasks found'))
                       : ListView.builder(
                           itemCount: taskProvider.allTasks.length,
                           itemBuilder: (context, index) {
@@ -451,7 +451,7 @@ class _TaskHistoryDashboardScreenState
                                       const SizedBox(height: 8),
                                       // Assigned to
                                       Text(
-                                        'المكلف به: ${task.assignedToName}',
+                                        'Assigned to: ${task.assignedToName}',
                                         style: const TextStyle(
                                           fontSize: 13,
                                           color: Colors.grey,
@@ -459,7 +459,7 @@ class _TaskHistoryDashboardScreenState
                                       ),
                                       // Created by
                                       Text(
-                                        'أنشأها: ${task.assignedByName}',
+                                        'Created by: ${task.assignedByName}',
                                         style: const TextStyle(
                                           fontSize: 13,
                                           color: Colors.grey,
@@ -467,7 +467,7 @@ class _TaskHistoryDashboardScreenState
                                       ),
                                       // Due Date
                                       Text(
-                                        'الموعد النهائي: ${task.dueDate.toString().split(' ')[0]}',
+                                        'Due date: ${task.dueDate.toString().split(' ')[0]}',
                                         style: const TextStyle(
                                           fontSize: 13,
                                           color: Colors.grey,
@@ -476,7 +476,7 @@ class _TaskHistoryDashboardScreenState
                                       // Last edited info
                                       if (task.lastEditedAt != null)
                                         Text(
-                                          'آخر تعديل: ${task.lastEditedBy} - ${task.lastEditedAt.toString().split(' ')[0]}',
+                                          'Last edited: ${task.lastEditedBy} - ${task.lastEditedAt.toString().split(' ')[0]}',
                                           style: const TextStyle(
                                             fontSize: 12,
                                             color: Colors.grey,
@@ -501,7 +501,7 @@ class _TaskHistoryDashboardScreenState
                                                 color: Colors.red,
                                               ),
                                               label: const Text(
-                                                'حذف',
+                                                'Delete',
                                                 style: TextStyle(
                                                   color: Colors.red,
                                                 ),
@@ -516,7 +516,7 @@ class _TaskHistoryDashboardScreenState
                                                 color: Color(0xFF0D3B66),
                                               ),
                                               label: const Text(
-                                                'تغيير الحالة',
+                                                'Change Status',
                                                 style: TextStyle(
                                                   color: Color(0xFF0D3B66),
                                                 ),
@@ -539,7 +539,7 @@ class _TaskHistoryDashboardScreenState
                                                 color: Color(0xFF0D3B66),
                                               ),
                                               label: const Text(
-                                                'تعديل',
+                                                'Edit',
                                                 style: TextStyle(
                                                   color: Color(0xFF0D3B66),
                                                 ),
@@ -564,7 +564,7 @@ class _TaskHistoryDashboardScreenState
                                                 color: Color(0xFF0D3B66),
                                               ),
                                               label: const Text(
-                                                'السجل',
+                                                'History',
                                                 style: TextStyle(
                                                   color: Color(0xFF0D3B66),
                                                 ),

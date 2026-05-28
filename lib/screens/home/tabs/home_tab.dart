@@ -115,7 +115,7 @@ class HomeTab extends StatelessWidget {
                   SizedBox(
                     width: double.infinity,
                     child: CustomButton(
-                      label: 'تسجيل الدخول / Login',
+                      label: 'Login',
                       onPressed: () {
                         Navigator.pushNamed(context, '/login');
                       },
@@ -162,11 +162,12 @@ class HomeTab extends StatelessWidget {
                             fontSize: 16,
                           ),
                         ),
-                        Directionality(
-                          textDirection: TextDirection.rtl,
+                        const SizedBox(width: 8),
+                        Expanded(
                           child: Text(
-                            'دَرِّبِ الطِّفْلَ فِي طَرِيقِهِ، فَمَتَى شَاخَ أَيْضًا لاَ يَحِيدُ عَنْهُ. (أمثال 22: 6)',
-                            maxLines: 1,
+                            'Train up a child in the way he should go; even when he is old he will not depart from it. (Proverbs 22:6)',
+                            maxLines: 2,
+                            softWrap: true,
                             overflow: TextOverflow.ellipsis,
                             textAlign: TextAlign.center,
                             style: Theme.of(context).textTheme.bodySmall

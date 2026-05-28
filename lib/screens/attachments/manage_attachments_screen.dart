@@ -8,6 +8,7 @@ import 'package:summerschool/constants/user_roles.dart';
 import 'package:summerschool/models/attachment_model.dart';
 import 'package:summerschool/providers/attachment_provider.dart';
 import 'package:summerschool/providers/auth_provider.dart';
+import 'package:summerschool/services/notification_service.dart';
 
 class ManageAttachmentsScreen extends StatefulWidget {
   const ManageAttachmentsScreen({super.key});
@@ -150,6 +151,8 @@ class _ManageAttachmentsScreenState extends State<ManageAttachmentsScreen> {
         title: title,
         stage: targetStage,
         uploadedBy: uploadedBy,
+        senderUserModel: user,
+        notificationService: NotificationService(),
       );
 
       if (!mounted) return;

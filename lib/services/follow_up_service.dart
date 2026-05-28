@@ -357,8 +357,8 @@ class FollowUpService {
       await _notificationService.createAutomaticNotification(
         sender: sender,
         type: 'visit',
-        title: 'زيارة جديدة',
-        body: 'تم تسجيل زيارة جديدة للطالب $studentName',
+        title: 'New Visit',
+        body: 'A new visit was recorded for student $studentName',
         targetRoles: <String>[UserRole.memberManager.value],
         targetStages: <String>[stageNorm],
         relatedId: visitId,

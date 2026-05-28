@@ -119,6 +119,8 @@ class AttachmentProvider extends ChangeNotifier {
     required String title,
     required String stage,
     required String uploadedBy,
+    dynamic senderUserModel,
+    dynamic notificationService,
   }) async {
     try {
       debugPrint(
@@ -133,6 +135,8 @@ class AttachmentProvider extends ChangeNotifier {
         stage: stage,
         uploadedBy: uploadedBy,
         targetRole: _selectedTargetRole,
+        senderUserModel: senderUserModel,
+        notificationService: notificationService,
       );
 
       debugPrint('[ATTACHMENT PROVIDER] Upload completed');
@@ -151,6 +155,8 @@ class AttachmentProvider extends ChangeNotifier {
     required String title,
     required String stage,
     required String uploadedBy,
+    dynamic senderUserModel,
+    dynamic notificationService,
   }) async {
     try {
       debugPrint(
@@ -164,6 +170,8 @@ class AttachmentProvider extends ChangeNotifier {
         stage: stage,
         uploadedBy: uploadedBy,
         targetRole: _selectedTargetRole,
+        senderUserModel: senderUserModel,
+        notificationService: notificationService,
       );
 
       debugPrint('[ATTACHMENT PROVIDER] Upload completed');

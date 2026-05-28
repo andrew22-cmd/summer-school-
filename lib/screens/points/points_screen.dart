@@ -88,7 +88,7 @@ class _PointsScreenState extends State<PointsScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         foregroundColor: AppColors.primary,
-        title: const Text('Points (الطايوهات)'),
+        title: const Text('Points'),
         actions: [
           IconButton(
             tooltip: 'History',

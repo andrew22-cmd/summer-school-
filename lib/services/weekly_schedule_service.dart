@@ -62,8 +62,8 @@ class WeeklyScheduleService {
         await _notificationService.createAutomaticNotification(
           sender: senderUserModel,
           type: 'schedule',
-          title: 'جدول محدث',
-          body: 'تم تحديث جدول المرحلة: ${item.stage}',
+          title: 'Schedule Updated',
+          body: 'The stage schedule was updated: ${item.stage}',
           targetStages: [item.stage],
           relatedId: item.id,
         );
@@ -87,8 +87,8 @@ class WeeklyScheduleService {
         await _notificationService.createAutomaticNotification(
           sender: senderUserModel,
           type: 'schedule',
-          title: 'جدول محدث',
-          body: 'تم تحديث جدول المرحلة: ${item.stage}',
+          title: 'Schedule Updated',
+          body: 'The stage schedule was updated: ${item.stage}',
           targetStages: [item.stage],
           relatedId: item.id,
         );

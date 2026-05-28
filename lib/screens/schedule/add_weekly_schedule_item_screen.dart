@@ -27,18 +27,18 @@ class _AddWeeklyScheduleItemScreenState
   final _formKey = GlobalKey<FormState>();
 
   static const List<String> _subjects = [
-    'كتاب مقدس',
-    'تنمية',
-    'فقره عن الله',
-    'طقس',
-    'خليك واعي',
-    'اكتشافات',
-    'عقيده',
-    'قبطي والحان',
-    'قدوة ومثال',
-    'اسعافات',
-    'صحتك',
-    'تعلم من الطبيعة',
+    'Bible',
+    'Development',
+    'Talk About God',
+    'Rites',
+    'Stay Aware',
+    'Discoveries',
+    'Doctrine',
+    'Coptic and Hymns',
+    'Role Model',
+    'First Aid',
+    'Your Health',
+    'Learn from Nature',
     'Other',
   ];
 
@@ -204,10 +204,10 @@ class _AddWeeklyScheduleItemScreenState
   Widget build(BuildContext context) {
     final isRtl = true;
     return Directionality(
-      textDirection: isRtl ? TextDirection.rtl : TextDirection.ltr,
+      textDirection: isRtl ? TextDirection.ltr : TextDirection.ltr,
       child: Scaffold(
         appBar: AppBar(
-          title: Text(_isEdit ? 'تعديل عنصر الجدول' : 'إضافة عنصر للجدول'),
+          title: Text(_isEdit ? 'Edit Schedule Item' : 'Add Schedule Item'),
           actions: [
             if (_isEdit)
               IconButton(
@@ -227,7 +227,7 @@ class _AddWeeklyScheduleItemScreenState
                 children: [
                   DropdownButtonFormField<String>(
                     value: _day,
-                    decoration: const InputDecoration(labelText: 'اليوم'),
+                    decoration: const InputDecoration(labelText: 'Day'),
                     items: WeeklyScheduleDays.values
                         .map(
                           (d) => DropdownMenuItem(
@@ -246,7 +246,7 @@ class _AddWeeklyScheduleItemScreenState
                   const SizedBox(height: 14),
                   DropdownButtonFormField<String>(
                     value: _subject,
-                    decoration: const InputDecoration(labelText: 'المادة'),
+                    decoration: const InputDecoration(labelText: 'Subject'),
                     items: _subjects
                         .map((s) => DropdownMenuItem(value: s, child: Text(s)))
                         .toList(),
@@ -289,7 +289,7 @@ class _AddWeeklyScheduleItemScreenState
                           icon: const Icon(Icons.access_time_rounded),
                           label: Text(
                             _startTime == null
-                                ? 'وقت البداية'
+                                ? 'Start Time'
                                 : _formatTime(_startTime!),
                           ),
                         ),
@@ -301,7 +301,7 @@ class _AddWeeklyScheduleItemScreenState
                           icon: const Icon(Icons.access_time_filled_rounded),
                           label: Text(
                             _endTime == null
-                                ? 'وقت النهاية'
+                                ? 'End Time'
                                 : _formatTime(_endTime!),
                           ),
                         ),
@@ -313,7 +313,7 @@ class _AddWeeklyScheduleItemScreenState
                     controller: _servantNameController,
                     enabled: !_saving,
                     decoration: const InputDecoration(
-                      labelText: 'اسم الخادم (اختياري)',
+                      labelText: 'Servant Name (Optional)',
                     ),
                   ),
                   const SizedBox(height: 14),
@@ -322,7 +322,7 @@ class _AddWeeklyScheduleItemScreenState
                     enabled: !_saving,
                     maxLines: 3,
                     decoration: const InputDecoration(
-                      labelText: 'ملاحظات (اختياري)',
+                      labelText: 'Notes (Optional)',
                     ),
                   ),
                   const SizedBox(height: 22),
@@ -335,7 +335,7 @@ class _AddWeeklyScheduleItemScreenState
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Icon(Icons.save_rounded),
-                    label: Text(_isEdit ? 'حفظ التعديلات' : 'إضافة'),
+                    label: Text(_isEdit ? 'Save Changes' : 'Add'),
                   ),
                 ],
               ),

@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:summerschool/constants/user_roles.dart';
 import 'package:summerschool/core/constants/app_colors.dart';
+import 'package:summerschool/models/task_model.dart';
 import 'package:summerschool/models/user_model.dart';
 import 'package:summerschool/providers/auth_provider.dart';
 import 'package:summerschool/providers/task_provider.dart';
@@ -279,6 +280,13 @@ class _ManageTasksScreenState extends State<ManageTasksScreen> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 IconButton(
+                                  icon: const Icon(Icons.delete_outline),
+                                  tooltip: 'Delete Task',
+                                  color: Colors.red,
+                                  onPressed: () =>
+                                      _confirmDeleteTask(task, currentUser),
+                                ),
+                                IconButton(
                                   icon: const Icon(Icons.edit),
                                   tooltip: 'Edit Task',
                                   onPressed: () {
@@ -362,6 +370,43 @@ class _ManageTasksScreenState extends State<ManageTasksScreen> {
     } catch (e) {
       if (!mounted) return;
       _showMessage('Failed to send task: $e');
+    }
+  }
+
+  Future<void> _confirmDeleteTask(TaskModel task, UserModel currentUser) async {
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Delete Task'),
+          content: Text('Are you sure you want to delete "${task.title}"?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldDelete != true) return;
+
+    try {
+      await context.read<TaskProvider>().deleteTask(
+        taskId: task.id,
+        currentUser: currentUser,
+      );
+
+      if (!mounted) return;
+      _showMessage('Task deleted successfully.', success: true);
+    } catch (e) {
+      if (!mounted) return;
+      _showMessage('Failed to delete task: $e');
     }
   }
 

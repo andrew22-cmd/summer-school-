@@ -27,20 +27,20 @@ class ServantsAttendanceService {
   static String dayNameArabic(DateTime date) {
     switch (DateTime(date.year, date.month, date.day).weekday) {
       case DateTime.monday:
-        return 'الاثنين';
+        return 'Monday';
       case DateTime.tuesday:
-        return 'الثلاثاء';
+        return 'Tuesday';
       case DateTime.wednesday:
-        return 'الأربعاء';
+        return 'Wednesday';
       case DateTime.thursday:
-        return 'الخميس';
+        return 'Thursday';
       case DateTime.friday:
-        return 'الجمعة';
+        return 'Friday';
       case DateTime.saturday:
-        return 'السبت';
+        return 'Saturday';
       case DateTime.sunday:
       default:
-        return 'الأحد';
+        return 'Sunday';
     }
   }
 

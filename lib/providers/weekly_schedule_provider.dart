@@ -134,9 +134,9 @@ class WeeklyScheduleDays {
   static String arabicLabel(String value) {
     switch (value) {
       case sunday:
-        return 'الأحد';
+        return 'Sunday';
       case wednesday:
-        return 'الأربعاء';
+        return 'Wednesday';
       default:
         return value;
     }

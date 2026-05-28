@@ -99,7 +99,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               Navigator.pushNamed(context, AppRoutes.servantsAttendance);
             },
             icon: const Icon(Icons.assignment_turned_in_rounded),
-            label: const Text('غياب الخدام'),
+            label: const Text('Servants Attendance'),
           ),
           const SizedBox(width: 4),
           if (!readOnly) ...[

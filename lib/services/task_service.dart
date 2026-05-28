@@ -156,8 +156,8 @@ class TaskService {
       await _notificationService.createAutomaticNotification(
         sender: assignedBy,
         type: 'task',
-        title: 'مهمة جديدة',
-        body: 'تم إضافة مهمة جديدة لك: ${title.trim()}',
+        title: 'New Task',
+        body: 'A new task was assigned to you: ${title.trim()}',
         targetUserId: assignedTo.id,
         relatedId: ref.id,
       );

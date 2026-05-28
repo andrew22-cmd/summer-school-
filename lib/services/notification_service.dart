@@ -38,7 +38,7 @@ class NotificationService {
     required bool isImportant,
   }) async {
     if (sender.role == UserRole.member) {
-      throw Exception('غير مسموح لك بإرسال إشعارات.');
+      throw Exception('You are not allowed to send notifications.');
     }
 
     final normalizedRoles = targetRoles
@@ -205,8 +205,8 @@ class NotificationService {
             return NotificationCenterItemModel(
               userNotificationId: userNotif.id,
               notificationId: userNotif.notificationId,
-              title: 'إشعار',
-              body: 'تم حذف هذا الإشعار.',
+              title: 'Notification',
+              body: 'This notification has been deleted.',
               createdAt: userNotif.createdAt,
               isRead: userNotif.isRead,
               isImportant: false,
@@ -235,6 +235,10 @@ class NotificationService {
     await _userNotifications.doc(docId).set({
       'isRead': true,
     }, SetOptions(merge: true));
+  }
+
+  Future<void> deleteNotification(String docId) async {
+    await _userNotifications.doc(docId).delete();
   }
 
   Future<void> markAllAsRead(String userId) async {

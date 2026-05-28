@@ -172,7 +172,7 @@ class _ClassMembersScreenState extends State<ClassMembersScreen> {
                                 columns: const [
                                   DataColumn(
                                     label: Text(
-                                      'الاسم',
+                                      'Name',
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                       ),
@@ -181,7 +181,7 @@ class _ClassMembersScreenState extends State<ClassMembersScreen> {
 
                                   DataColumn(
                                     label: Text(
-                                      'مرحلة',
+                                      'Stage',
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                       ),
@@ -190,7 +190,7 @@ class _ClassMembersScreenState extends State<ClassMembersScreen> {
 
                                   DataColumn(
                                     label: Text(
-                                      'السنة',
+                                      'Year',
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                       ),
@@ -199,7 +199,7 @@ class _ClassMembersScreenState extends State<ClassMembersScreen> {
 
                                   DataColumn(
                                     label: Text(
-                                      'التليفون',
+                                      'Phone',
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                       ),
@@ -208,7 +208,7 @@ class _ClassMembersScreenState extends State<ClassMembersScreen> {
 
                                   DataColumn(
                                     label: Text(
-                                      'تليفون ولي الأمر',
+                                      'Parent Phone',
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                       ),
@@ -217,7 +217,7 @@ class _ClassMembersScreenState extends State<ClassMembersScreen> {
 
                                   DataColumn(
                                     label: Text(
-                                      'اب الاعتراف',
+                                      'Confession Father',
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                       ),
@@ -226,7 +226,7 @@ class _ClassMembersScreenState extends State<ClassMembersScreen> {
 
                                   DataColumn(
                                     label: Text(
-                                      'الطايوهات',
+                                      'Points',
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                       ),
@@ -235,7 +235,7 @@ class _ClassMembersScreenState extends State<ClassMembersScreen> {
 
                                   DataColumn(
                                     label: Text(
-                                      'الإجراءات',
+                                      'Actions',
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                       ),
@@ -349,11 +349,11 @@ class _ClassMembersScreenState extends State<ClassMembersScreen> {
 
                                                         builder: (_) => AlertDialog(
                                                           title: const Text(
-                                                            'حذف الطالب',
+                                                            'Delete Student',
                                                           ),
 
                                                           content: Text(
-                                                            'هل تريد حذف ${m.name}؟ لا يمكن التراجع عن هذا الإجراء.',
+                                                            'Do you want to delete ${m.name}? This action cannot be undone.',
                                                           ),
 
                                                           actions: [
@@ -365,7 +365,7 @@ class _ClassMembersScreenState extends State<ClassMembersScreen> {
                                                                   ),
 
                                                               child: const Text(
-                                                                'الغاء',
+                                                                'Cancel',
                                                               ),
                                                             ),
 
@@ -377,7 +377,7 @@ class _ClassMembersScreenState extends State<ClassMembersScreen> {
                                                                   ),
 
                                                               child: const Text(
-                                                                'حذف',
+                                                                'Delete',
                                                               ),
                                                             ),
                                                           ],

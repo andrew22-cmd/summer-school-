@@ -6,7 +6,8 @@
   "type": "commonjs",
   "scripts": {
     "start": "node index.js",
-    "dev": "node index.js"
+    "dev": "node index.js",
+    "send-reminders": "node ./scripts/send_event_reminders.js"
   },
   "keywords": [
     "firebase",
