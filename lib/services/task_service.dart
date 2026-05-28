@@ -3,7 +3,6 @@ import 'package:flutter/foundation.dart';
 import 'package:summerschool/constants/user_roles.dart';
 import 'package:summerschool/models/task_model.dart';
 import 'package:summerschool/models/user_model.dart';
-import 'package:summerschool/services/github_trigger_service.dart';
 import 'package:summerschool/services/firestore_user_service.dart';
 import 'package:summerschool/services/notification_service.dart';
 
@@ -12,16 +11,13 @@ class TaskService {
     FirebaseFirestore? firestore,
     FirestoreUserService? firestoreUserService,
     NotificationService? notificationService,
-    GitHubTriggerService? githubTriggerService,
   }) : _firestore = firestore ?? FirebaseFirestore.instance,
        _firestoreUserService = firestoreUserService ?? FirestoreUserService(),
-       _notificationService = notificationService ?? NotificationService(),
-       _githubTriggerService = githubTriggerService ?? GitHubTriggerService();
+       _notificationService = notificationService ?? NotificationService();
 
   final FirebaseFirestore _firestore;
   final FirestoreUserService _firestoreUserService;
   final NotificationService _notificationService;
-  final GitHubTriggerService? _githubTriggerService;
 
   static const String collection = 'tasks';
 
@@ -167,24 +163,6 @@ class TaskService {
       );
     } catch (e) {
       debugPrint('[TaskService] notification error: $e');
-    }
-
-    try {
-      final githubTriggerService = _githubTriggerService;
-      if (githubTriggerService != null) {
-        final topic = githubTriggerService.resolveTopic(
-          role: assignedTo.role.value,
-          stage: assignedTo.stage,
-        );
-
-        await githubTriggerService.triggerNotification(
-          title: 'New Task',
-          body: 'You received a new task',
-          topic: topic,
-        );
-      }
-    } catch (e) {
-      debugPrint('[TaskService] GitHub trigger error: $e');
     }
   }
 

@@ -12,6 +12,12 @@ class AppNotificationModel {
     required this.isImportant,
     this.type = 'manual',
     this.relatedId = '',
+    this.senderId = '',
+    this.receiverId = '',
+    this.receiverRole = '',
+    this.receiverStage = '',
+    this.topic = '',
+    this.isRead = false,
   });
 
   final String id;
@@ -24,6 +30,12 @@ class AppNotificationModel {
   final bool isImportant;
   final String type; // manual, task, attachment, event, schedule, visits
   final String relatedId; // task/attachment/event/schedule id for reference
+  final String senderId;
+  final String receiverId;
+  final String receiverRole;
+  final String receiverStage;
+  final String topic;
+  final bool isRead;
 
   factory AppNotificationModel.fromMap(Map<String, dynamic> map) {
     List<String> toStringList(dynamic value) {
@@ -53,6 +65,12 @@ class AppNotificationModel {
       isImportant: map['isImportant'] == true,
       type: (map['type'] ?? 'manual').toString(),
       relatedId: (map['relatedId'] ?? '').toString(),
+      senderId: (map['senderId'] ?? '').toString(),
+      receiverId: (map['receiverId'] ?? '').toString(),
+      receiverRole: (map['receiverRole'] ?? '').toString(),
+      receiverStage: (map['receiverStage'] ?? '').toString(),
+      topic: (map['topic'] ?? '').toString(),
+      isRead: map['isRead'] == true,
     );
   }
 
@@ -68,6 +86,12 @@ class AppNotificationModel {
       'isImportant': isImportant,
       'type': type,
       'relatedId': relatedId,
+      'senderId': senderId,
+      'receiverId': receiverId,
+      'receiverRole': receiverRole,
+      'receiverStage': receiverStage,
+      'topic': topic,
+      'isRead': isRead,
     };
   }
 

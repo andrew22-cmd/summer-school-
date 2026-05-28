@@ -131,6 +131,13 @@ class FirestoreUserService {
 
   Future<void> updateUser(String id, Map<String, dynamic> data) async {
     try {
+      if (data.containsKey('stage')) {
+        final stage = (data['stage'] ?? '').toString();
+        data['stage_norm'] = stage.replaceAll(' ', '').toLowerCase();
+      } else if (data.containsKey('class')) {
+        final stage = (data['class'] ?? '').toString();
+        data['stage_norm'] = stage.replaceAll(' ', '').toLowerCase();
+      }
       await _usersCollection.doc(id).update(data);
     } on FirebaseException catch (e) {
       throw Exception(_firebaseMessage('update user', e));

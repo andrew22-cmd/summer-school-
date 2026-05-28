@@ -5,12 +5,17 @@ import 'package:summerschool/models/app_notification_model.dart';
 import 'package:summerschool/models/notification_center_item_model.dart';
 import 'package:summerschool/models/user_notification_model.dart';
 import 'package:summerschool/models/user_model.dart';
+import 'package:summerschool/services/github_trigger_service.dart';
 
 class NotificationService {
-  NotificationService({FirebaseFirestore? firestore})
-    : _firestore = firestore ?? FirebaseFirestore.instance;
+  NotificationService({
+    FirebaseFirestore? firestore,
+    GitHubTriggerService? githubTriggerService,
+  }) : _firestore = firestore ?? FirebaseFirestore.instance,
+       _githubTriggerService = githubTriggerService ?? GitHubTriggerService();
 
   final FirebaseFirestore _firestore;
+  final GitHubTriggerService _githubTriggerService;
 
   CollectionReference<Map<String, dynamic>> get _notifications =>
       _firestore.collection('notifications');
@@ -64,6 +69,8 @@ class NotificationService {
       createdBy: sender.id,
       createdAt: DateTime.now(),
       isImportant: isImportant,
+      senderId: sender.id,
+      isRead: false,
     );
 
     await ref.set(model.toMap());
@@ -95,6 +102,17 @@ class NotificationService {
       }
       await batch.commit();
     }
+
+    await _dispatchPushNotification(
+      sender: sender,
+      title: title,
+      body: body,
+      recipientIds: recipientIds.toSet(),
+      targetRoles: effectiveRoles,
+      targetStages: effectiveStages,
+      type: 'manual',
+      relatedId: ref.id,
+    );
 
     debugPrint(
       '[NotificationService] notification saved id=${ref.id} recipients=${recipientIds.length}',
@@ -246,7 +264,15 @@ class NotificationService {
     String? relatedId, // reference to task/attachment/event id
   }) async {
     try {
-      if (sender.role == UserRole.member) {
+      final typeKey = type.trim().toLowerCase();
+      final isMemberVisitOrFollowUp =
+          sender.role == UserRole.member &&
+          (typeKey == 'visit' ||
+              typeKey == 'visits' ||
+              typeKey == 'follow_up' ||
+              typeKey == 'followup');
+
+      if (sender.role == UserRole.member && !isMemberVisitOrFollowUp) {
         debugPrint(
           '[NotificationService] member cannot trigger automatic notifications',
         );
@@ -259,6 +285,29 @@ class NotificationService {
       if (targetUserId != null && targetUserId.isNotEmpty) {
         // Single user (task assigned to specific person)
         recipientIds.add(targetUserId);
+      } else if (isMemberVisitOrFollowUp) {
+        final senderStageNorm = normalizeStage(sender.stage);
+        final mmDocs = await _users
+            .where('role', isEqualTo: UserRole.memberManager.value)
+            .where('stage_norm', isEqualTo: senderStageNorm)
+            .get();
+
+        for (final doc in mmDocs.docs) {
+          final uid = (doc.data()['id'] ?? doc.id).toString();
+          if (uid.isNotEmpty) recipientIds.add(uid);
+        }
+
+        // Backward compatibility if some docs are missing `stage_norm`.
+        if (recipientIds.isEmpty) {
+          final fallbackDocs = await _users
+              .where('role', isEqualTo: UserRole.memberManager.value)
+              .where('stage', isEqualTo: sender.stage)
+              .get();
+          for (final doc in fallbackDocs.docs) {
+            final uid = (doc.data()['id'] ?? doc.id).toString();
+            if (uid.isNotEmpty) recipientIds.add(uid);
+          }
+        }
       } else if (sender.role == UserRole.memberManager) {
         // Member manager can only notify their stage members
         final stageDocs = await _users
@@ -323,6 +372,8 @@ class NotificationService {
         isImportant: false,
         type: type,
         relatedId: relatedId ?? '',
+        senderId: sender.id,
+        isRead: false,
       );
 
       await ref.set(model.toMap());
@@ -345,6 +396,22 @@ class NotificationService {
         await batch.commit();
       }
 
+      await _dispatchPushNotification(
+        sender: sender,
+        title: title,
+        body: body,
+        recipientIds: recipientIds,
+        targetRoles: isMemberVisitOrFollowUp
+            ? <String>[UserRole.memberManager.value]
+            : (targetRoles ?? <String>[]),
+        targetStages: isMemberVisitOrFollowUp
+            ? <String>[normalizeStage(sender.stage)]
+            : (targetStages ?? <String>[]),
+        type: type,
+        relatedId: relatedId ?? '',
+        targetUserId: targetUserId,
+      );
+
       debugPrint(
         '[NotificationService] automatic $type notification created id=${ref.id} recipients=${recipientIds.length}',
       );
@@ -354,5 +421,143 @@ class NotificationService {
       );
       rethrow;
     }
+  }
+
+  Future<void> _dispatchPushNotification({
+    required UserModel sender,
+    required String title,
+    required String body,
+    required Set<String> recipientIds,
+    required List<String> targetRoles,
+    required List<String> targetStages,
+    required String type,
+    required String relatedId,
+    String? targetUserId,
+  }) async {
+    try {
+      final normalizedRoles = targetRoles
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toSet()
+          .toList();
+      final normalizedStages = targetStages
+          .map((e) => normalizeStage(e))
+          .where((e) => e.isNotEmpty)
+          .toSet()
+          .toList();
+
+      debugPrint(
+        '[NotificationService] push dispatch start type=$type relatedId=$relatedId sender=${sender.id} recipients=${recipientIds.length} roles=$normalizedRoles stages=$normalizedStages targetUserId=${targetUserId ?? ''}',
+      );
+
+      if (targetUserId != null && targetUserId.isNotEmpty) {
+        final token = await _getUserToken(targetUserId);
+        if (token != null && token.isNotEmpty) {
+          debugPrint(
+            '[NotificationService] push direct token user=$targetUserId type=$type relatedId=$relatedId',
+          );
+          final ok = await _githubTriggerService.sendNotification(
+            title: title,
+            body: body,
+            token: token,
+          );
+          debugPrint('[NotificationService] push direct token result=$ok');
+          return;
+        }
+      }
+
+      final hasStageOnlyTargets =
+          normalizedStages.isNotEmpty && normalizedRoles.isEmpty;
+      final hasRoleAndStageTargets =
+          normalizedStages.isNotEmpty && normalizedRoles.isNotEmpty;
+
+      if (hasStageOnlyTargets) {
+        for (final stage in normalizedStages) {
+          final stageTopic = _toStageTopic(stage);
+          debugPrint(
+            '[NotificationService] push stage topic=$stageTopic type=$type relatedId=$relatedId',
+          );
+          final ok = await _githubTriggerService.sendNotification(
+            title: title,
+            body: body,
+            topic: stageTopic,
+          );
+          debugPrint('[NotificationService] push stage topic result=$ok');
+        }
+        return;
+      }
+
+      if (hasRoleAndStageTargets) {
+        // Intersection targeting (role + stage) is safest via direct tokens.
+        for (final userId in recipientIds) {
+          final token = await _getUserToken(userId);
+          if (token == null || token.isEmpty) continue;
+          final ok = await _githubTriggerService.sendNotification(
+            title: title,
+            body: body,
+            token: token,
+          );
+          debugPrint(
+            '[NotificationService] push role+stage direct token user=$userId result=$ok',
+          );
+        }
+        return;
+      }
+
+      final topics = <String>{};
+      if (normalizedRoles.isEmpty) {
+        topics.add('all');
+      } else {
+        topics.addAll(normalizedRoles.map(_mapRoleToTopic));
+      }
+
+      for (final topic in topics) {
+        debugPrint(
+          '[NotificationService] push topic=$topic type=$type relatedId=$relatedId sender=${sender.id}',
+        );
+        final ok = await _githubTriggerService.sendNotification(
+          title: title,
+          body: body,
+          topic: topic,
+        );
+        debugPrint('[NotificationService] push topic result=$ok');
+      }
+    } catch (e) {
+      debugPrint('[NotificationService] push dispatch error: $e');
+    }
+  }
+
+  String _mapRoleToTopic(String role) {
+    final normalized = role.trim().toLowerCase();
+    switch (normalized) {
+      case 'manager':
+      case 'managers':
+        return 'managers';
+      case 'member_manager':
+      case 'member_managers':
+        return 'member_managers';
+      case 'member':
+      case 'members':
+        return 'members';
+      default:
+        return normalized;
+    }
+  }
+
+  String _toStageTopic(String stageNorm) {
+    final cleaned = stageNorm.trim().toLowerCase().replaceAll(
+      RegExp(r'[^a-z0-9_]'),
+      '_',
+    );
+    if (cleaned.startsWith('stage_')) return cleaned;
+    return 'stage_$cleaned';
+  }
+
+  Future<String?> _getUserToken(String userId) async {
+    final doc = await _users.doc(userId).get();
+    final data = doc.data();
+    if (data == null) return null;
+    final token = (data['fcmToken'] ?? '').toString().trim();
+    return token.isEmpty ? null : token;
   }
 }

@@ -74,6 +74,7 @@ class UserModel {
       'confessionFather': confessionFather,
       'role': role.value,
       'stage': stage,
+      'stage_norm': stage.replaceAll(' ', '').toLowerCase(),
       'class': stage,
       'email': email,
       'createdAt': Timestamp.fromDate(createdAt),

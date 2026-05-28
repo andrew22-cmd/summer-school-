@@ -1,17 +1,24 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
+import 'package:summerschool/constants/user_roles.dart';
 import 'package:summerschool/models/class_member_model.dart';
 import 'package:summerschool/models/follow_up_model.dart';
+import 'package:summerschool/models/user_model.dart';
 import 'package:summerschool/services/class_member_service.dart';
+import 'package:summerschool/services/notification_service.dart';
 
 class FollowUpService {
-  FollowUpService({FirebaseFirestore? firestore})
-    : _firestore = firestore ?? FirebaseFirestore.instance,
-      _classMemberService = ClassMemberService(firestore: firestore);
+  FollowUpService({
+    FirebaseFirestore? firestore,
+    NotificationService? notificationService,
+  }) : _firestore = firestore ?? FirebaseFirestore.instance,
+       _classMemberService = ClassMemberService(firestore: firestore),
+       _notificationService = notificationService ?? NotificationService();
 
   final FirebaseFirestore _firestore;
   final ClassMemberService _classMemberService;
+  final NotificationService _notificationService;
 
   static const String collection = 'visits';
 
@@ -256,6 +263,15 @@ class FollowUpService {
     );
 
     await docRef.set(model.toMap());
+
+    await _notifyVisitCreated(
+      createdByRole: createdByRole,
+      servantId: servantId,
+      studentName: studentName,
+      stage: stage,
+      visitId: docRef.id,
+      visitType: visitType,
+    );
   }
 
   Future<void> saveWeeklyFollowUp({
@@ -309,6 +325,63 @@ class FollowUpService {
       requesterStage: stage,
       monthDate: weekStartDate,
     );
+  }
+
+  Future<void> _notifyVisitCreated({
+    required String createdByRole,
+    required String servantId,
+    required String studentName,
+    required String stage,
+    required String visitId,
+    required String visitType,
+  }) async {
+    final role = createdByRole.trim().toLowerCase();
+    if (role != UserRole.member.value) {
+      return;
+    }
+
+    try {
+      final sender = await _loadUserById(servantId);
+      if (sender == null) {
+        debugPrint(
+          '[FollowUpService] visit notify skipped, sender not found servantId=$servantId',
+        );
+        return;
+      }
+
+      final stageNorm = normalizeStage(stage);
+      debugPrint(
+        '[FollowUpService] visit notify start visitId=$visitId stage=$stageNorm sender=${sender.id}',
+      );
+
+      await _notificationService.createAutomaticNotification(
+        sender: sender,
+        type: 'visit',
+        title: 'زيارة جديدة',
+        body: 'تم تسجيل زيارة جديدة للطالب $studentName',
+        targetRoles: <String>[UserRole.memberManager.value],
+        targetStages: <String>[stageNorm],
+        relatedId: visitId,
+      );
+
+      debugPrint(
+        '[FollowUpService] visit notify done visitId=$visitId type=$visitType stage=$stageNorm',
+      );
+    } catch (e) {
+      debugPrint('[FollowUpService] visit notify error: $e');
+    }
+  }
+
+  Future<UserModel?> _loadUserById(String userId) async {
+    final id = userId.trim();
+    if (id.isEmpty) return null;
+
+    final doc = await _firestore.collection('users').doc(id).get();
+    if (!doc.exists || doc.data() == null) {
+      return null;
+    }
+
+    return UserModel.fromMap(doc.data()!);
   }
 } /*
 import 'package:cloud_firestore/cloud_firestore.dart';

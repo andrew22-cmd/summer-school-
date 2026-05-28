@@ -163,23 +163,35 @@ class FcmService {
     }
   }
 
-  Future<void> subscribeToTopic(String topic) async {
-    final sanitized = _sanitizeTopic(topic);
-    if (sanitized.isEmpty) return;
-
-    await _messaging.subscribeToTopic(sanitized);
-    _subscribedTopics.add(sanitized);
-    debugPrint('[FCM] Subscribed to topic: $sanitized');
+ Future<void> subscribeToTopic(String topic) async {
+  if (kIsWeb) {
+    debugPrint('[FCM] Skipping topic subscription on Web');
+    return;
   }
 
-  Future<void> unsubscribeFromTopic(String topic) async {
-    final sanitized = _sanitizeTopic(topic);
-    if (sanitized.isEmpty) return;
+  final sanitized = _sanitizeTopic(topic);
+  if (sanitized.isEmpty) return;
 
-    await _messaging.unsubscribeFromTopic(sanitized);
-    _subscribedTopics.remove(sanitized);
-    debugPrint('[FCM] Unsubscribed from topic: $sanitized');
+  await _messaging.subscribeToTopic(sanitized);
+  _subscribedTopics.add(sanitized);
+
+  debugPrint('[FCM] Subscribed to topic: $sanitized');
+}
+
+ Future<void> unsubscribeFromTopic(String topic) async {
+  if (kIsWeb) {
+    debugPrint('[FCM] Skipping topic unsubscribe on Web');
+    return;
   }
+
+  final sanitized = _sanitizeTopic(topic);
+  if (sanitized.isEmpty) return;
+
+  await _messaging.unsubscribeFromTopic(sanitized);
+  _subscribedTopics.remove(sanitized);
+
+  debugPrint('[FCM] Unsubscribed from topic: $sanitized');
+}
 
   Future<void> subscribeToUserTopics(String role, String? stage) async {
     final topics = <String>{'all'};

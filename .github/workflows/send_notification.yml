@@ -13,7 +13,11 @@ on:
         type: string
       topic:
         description: 'FCM topic'
-        required: true
+        required: false
+        type: string
+      token:
+        description: 'FCM token'
+        required: false
         type: string
 
 jobs:
@@ -39,6 +43,7 @@ jobs:
           NOTIF_TITLE: ${{ github.event.inputs.title }}
           NOTIF_BODY: ${{ github.event.inputs.body }}
           NOTIF_TOPIC: ${{ github.event.inputs.topic }}
+          NOTIF_TOKEN: ${{ github.event.inputs.token }}
         run: |
           node -e "
           const admin = require('firebase-admin');
@@ -50,8 +55,11 @@ jobs:
 
           async function send() {
             try {
+              const token = String(process.env.NOTIF_TOKEN || '').trim();
+              const topic = String(process.env.NOTIF_TOPIC || '').trim();
+              const useToken = token.length > 0;
+
               const message = {
-                topic: process.env.NOTIF_TOPIC,
                 notification: {
                   title: process.env.NOTIF_TITLE,
                   body: process.env.NOTIF_BODY
@@ -65,7 +73,16 @@ jobs:
                 }
               };
 
-              console.log('TARGET_TOPIC:', process.env.NOTIF_TOPIC);
+              if (useToken) {
+                message.token = token;
+                console.log('TARGET_MODE: token');
+                console.log('TARGET_TOKEN:', token);
+              } else {
+                message.topic = topic;
+                console.log('TARGET_MODE: topic');
+                console.log('TARGET_TOPIC:', topic);
+              }
+
               console.log('SENDING_MESSAGE:', JSON.stringify(message, null, 2));
 
               const response = await admin.messaging().send(message);

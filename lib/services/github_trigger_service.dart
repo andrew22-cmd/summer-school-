@@ -5,11 +5,11 @@ import 'package:http/http.dart' as http;
 
 class GitHubTriggerService {
   GitHubTriggerService({
-    String githubToken = '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',
+    String githubToken = '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',
     String repoOwner = 'andrew22-cmd',
     String repoName = 'summer-school-',
     this.workflowFile = 'send_notification.yml',
-    this.ref = 'version2',
+    this.ref = 'main',
     http.Client? client,
   }) : _githubToken = githubToken,
        _repoOwner = repoOwner,
@@ -26,7 +26,22 @@ class GitHubTriggerService {
   Future<bool> triggerNotification({
     required String title,
     required String body,
-    required String topic,
+    String? topic,
+    String? token,
+  }) async {
+    return sendNotification(
+      title: title,
+      body: body,
+      topic: topic,
+      token: token,
+    );
+  }
+
+  Future<bool> sendNotification({
+    required String title,
+    required String body,
+    String? topic,
+    String? token,
   }) async {
     if (_hasPlaceholderCredentials()) {
       debugPrint(
@@ -35,18 +50,37 @@ class GitHubTriggerService {
       return false;
     }
 
+    final tokenValid =
+        _githubToken.isNotEmpty && !_githubToken.startsWith('YOUR_');
+    debugPrint(
+      '[GitHubTrigger] Token valid: $tokenValid, length=${_githubToken.length}, prefix=${_githubToken.substring(0, 4)}***',
+    );
+    debugPrint('[GitHubTrigger] Repo: $_repoOwner/$_repoName');
+    debugPrint('[GitHubTrigger] Workflow file: $workflowFile');
+    debugPrint('[GitHubTrigger] Target branch/ref: $ref');
+
     final url = Uri.parse(
       'https://api.github.com/repos/$_repoOwner/$_repoName/actions/workflows/$workflowFile/dispatches',
     );
 
     final payload = <String, dynamic>{
       'ref': ref,
-      'inputs': <String, dynamic>{'title': title, 'body': body, 'topic': topic},
+      'inputs': <String, dynamic>{
+        'title': title,
+        'body': body,
+        if (topic != null && topic.trim().isNotEmpty) 'topic': topic.trim(),
+        if (token != null && token.trim().isNotEmpty) 'token': token.trim(),
+      },
     };
 
     try {
+      final hasToken = token != null && token.trim().isNotEmpty;
+      debugPrint('[GitHubTrigger] Dispatch start');
       debugPrint('[GitHubTrigger] Dispatching workflow: $url');
-      debugPrint('[GitHubTrigger] ref=$ref topic=$topic');
+      debugPrint(
+        '[GitHubTrigger] target=${hasToken ? 'token' : 'topic'} topic=${topic?.trim().isNotEmpty == true ? topic!.trim() : '[none]'} token=${hasToken ? '[provided]' : '[none]'} ref=$ref',
+      );
+      debugPrint('[GitHubTrigger] workflow payload: ${jsonEncode(payload)}');
 
       final response = await _client.post(
         url,
@@ -60,11 +94,24 @@ class GitHubTriggerService {
       );
 
       debugPrint('[GitHubTrigger] Status: ${response.statusCode}');
-      debugPrint('[GitHubTrigger] Response: ${response.body}');
+      debugPrint('[GitHubTrigger] Response body: ${response.body}');
+      debugPrint('[GitHubTrigger] Response headers: ${response.headers}');
 
       if (response.statusCode == 204) {
-        debugPrint('[GitHubTrigger] Workflow dispatched successfully');
+        debugPrint(
+          '[GitHubTrigger] Workflow dispatched successfully to branch $ref',
+        );
         return true;
+      }
+
+      if (response.statusCode == 401) {
+        debugPrint(
+          '[GitHubTrigger] AUTHENTICATION FAILED (401) - Token may be expired or invalid',
+        );
+      } else if (response.statusCode == 404) {
+        debugPrint(
+          '[GitHubTrigger] NOT FOUND (404) - Check: repo name, workflow file name, or branch "$ref" does not exist',
+        );
       }
 
       throw Exception(
