@@ -6,6 +6,7 @@ import 'package:summerschool/providers/attendance_provider.dart';
 import 'package:summerschool/providers/auth_provider.dart';
 import 'package:summerschool/providers/servants_attendance_provider.dart';
 import 'package:summerschool/screens/attendance/servants_attendance_screen.dart';
+import 'package:summerschool/services/pdf_service.dart';
 import 'package:summerschool/services/servants_attendance_service.dart';
 
 class AttendanceScreen extends StatefulWidget {
@@ -26,6 +27,54 @@ class AttendanceScreen extends StatefulWidget {
 
 class _AttendanceScreenState extends State<AttendanceScreen> {
   String? _startedStage;
+  bool _isExportingPdf = false;
+  final PdfService _pdfService = const PdfService();
+
+  Future<void> _exportAndShareAttendancePdf({
+    required String stage,
+    required AttendanceProvider attendance,
+  }) async {
+    if (_isExportingPdf) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+    final rows = attendance.students
+        .map(
+          (student) => [
+            student.name,
+            attendance.isPresent(student.id) ? 'Present' : 'Absent',
+            attendance.formattedSelectedDate,
+            stage,
+          ],
+        )
+        .toList();
+
+    if (rows.isEmpty) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('No attendance data available to export.')),
+      );
+      return;
+    }
+
+    setState(() => _isExportingPdf = true);
+    try {
+      await _pdfService.generateAndShareTablePdf(
+        title: 'Attendance - $stage',
+        headers: const ['Student', 'Status', 'Date', 'Stage'],
+        data: rows,
+      );
+      if (!mounted) return;
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Attendance PDF ready to share.')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text('Failed to export attendance PDF: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _isExportingPdf = false);
+    }
+  }
 
   @override
   void didChangeDependencies() {
@@ -147,6 +196,22 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             const SizedBox(width: 8),
           ],
         ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _isExportingPdf
+            ? null
+            : () => _exportAndShareAttendancePdf(
+                stage: effectiveStage,
+                attendance: attendance,
+              ),
+        icon: _isExportingPdf
+            ? const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(Icons.picture_as_pdf_rounded),
+        label: Text(_isExportingPdf ? 'Exporting...' : 'Export & Share'),
       ),
       body: SafeArea(
         child: Center(

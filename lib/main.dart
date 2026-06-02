@@ -22,7 +22,7 @@ import 'services/points_service.dart';
 // (done)weekly schd. will be sunday and wednsday
 // (done)for manager can see history of points
 //(done)manager can in attachments send for member-manager or managers only not members or all
-// reminder for event before one day from event
+//(done) reminder for event before one day from event
 //(done)task history and can be edit - now inside add task tab
 // (done)delete student from class (remove it)
 //(done) in add points must select reason and points counted on this reason

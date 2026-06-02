@@ -30,6 +30,128 @@ class _FollowUpDetailsScreenState extends State<FollowUpDetailsScreen> {
   final TextEditingController _notesController = TextEditingController();
   bool _isSaving = false;
 
+  Future<void> _openVisitEntryDetails(
+    BuildContext context,
+    FollowUpModel visit,
+  ) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (ctx) {
+        final dateText = DateFormat('yyyy/MM/dd').format(visit.visitDate);
+        final createdAtText = DateFormat(
+          'yyyy/MM/dd  HH:mm',
+        ).format(visit.createdAt);
+        final nextFollowUpText = visit.nextFollowUp == null
+            ? 'Not set'
+            : DateFormat('yyyy/MM/dd').format(visit.nextFollowUp!);
+
+        Widget detailRow({
+          required IconData icon,
+          required String title,
+          required String value,
+        }) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(icon, size: 20, color: AppColors.primary),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          color: Colors.grey.shade700,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        value.trim().isEmpty ? '-' : value,
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Visit Details',
+                    style: Theme.of(ctx).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  detailRow(
+                    icon: Icons.calendar_month_rounded,
+                    title: 'Visit date',
+                    value:
+                        '$dateText (${FollowUpService.dayName(visit.visitDate)})',
+                  ),
+                  detailRow(
+                    icon: Icons.person_rounded,
+                    title: 'Servant',
+                    value: visit.servantName,
+                  ),
+                  detailRow(
+                    icon: Icons.verified_user_rounded,
+                    title: 'Responded / Contacted',
+                    value: visit.responded ? 'Yes' : 'No',
+                  ),
+                  detailRow(
+                    icon: Icons.category_rounded,
+                    title: 'Visit type',
+                    value: visit.visitType,
+                  ),
+                  detailRow(
+                    icon: Icons.short_text_rounded,
+                    title: 'Summary',
+                    value: visit.summary,
+                  ),
+                  detailRow(
+                    icon: Icons.notes_rounded,
+                    title: 'Notes',
+                    value: visit.notes,
+                  ),
+                  detailRow(
+                    icon: Icons.favorite_rounded,
+                    title: 'Favorite thing',
+                    value: visit.favoriteThing,
+                  ),
+                  detailRow(
+                    icon: Icons.event_available_rounded,
+                    title: 'Next follow-up',
+                    value: nextFollowUpText,
+                  ),
+                  detailRow(
+                    icon: Icons.history_rounded,
+                    title: 'Recorded at',
+                    value: createdAtText,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   void dispose() {
     _notesController.dispose();
@@ -221,10 +343,9 @@ class _FollowUpDetailsScreenState extends State<FollowUpDetailsScreen> {
             }
 
             final visits = snapshot.data ?? [];
-            final latest = visits.isNotEmpty
-                ? (visits..sort((a, b) => b.visitDate.compareTo(a.visitDate)))
-                      .first
-                : null;
+            final sortedVisits = [...visits]
+              ..sort((a, b) => b.visitDate.compareTo(a.visitDate));
+            final latest = sortedVisits.isNotEmpty ? sortedVisits.first : null;
             final servantName = latest?.servantName.isNotEmpty == true
                 ? latest!.servantName
                 : user.name;
@@ -298,20 +419,39 @@ class _FollowUpDetailsScreenState extends State<FollowUpDetailsScreen> {
                     )
                   else
                     Column(
-                      children: visits
+                      children: sortedVisits
                           .map(
-                            (v) => ListTile(
-                              leading: Icon(
-                                v.responded ? Icons.check_circle : Icons.cancel,
-                                color: v.responded
-                                    ? Colors.green
-                                    : Colors.orange,
+                            (v) => Card(
+                              margin: const EdgeInsets.only(bottom: 8),
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
                               ),
-                              title: Text(
-                                DateFormat('yyyy/MM/dd').format(v.visitDate),
-                              ),
-                              subtitle: Text(
-                                v.summary.isNotEmpty ? v.summary : v.notes,
+                              child: ListTile(
+                                onTap: () => _openVisitEntryDetails(context, v),
+                                leading: Icon(
+                                  v.responded
+                                      ? Icons.check_circle
+                                      : Icons.cancel,
+                                  color: v.responded
+                                      ? Colors.green
+                                      : Colors.orange,
+                                ),
+                                title: Text(
+                                  DateFormat('yyyy/MM/dd').format(v.visitDate),
+                                ),
+                                subtitle: Text(
+                                  v.summary.isNotEmpty
+                                      ? v.summary
+                                      : (v.notes.isNotEmpty
+                                            ? v.notes
+                                            : 'Tap to view details'),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                trailing: const Icon(
+                                  Icons.chevron_right_rounded,
+                                ),
                               ),
                             ),
                           )

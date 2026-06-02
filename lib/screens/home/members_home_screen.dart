@@ -58,87 +58,95 @@ class MembersHomeScreen extends StatelessWidget {
                 return _NotificationBellDropdown(unread: unread);
               },
             ),
-          TextButton.icon(
-            onPressed: () async {
-              await context.read<AuthProvider>().logout();
-              if (!context.mounted) return;
-              Navigator.pushNamedAndRemoveUntil(
-                context,
-                AppRoutes.login,
-                (_) => false,
-              );
-            },
-            icon: const Icon(Icons.logout_rounded),
-            label: const Text('Logout'),
-          ),
-          const SizedBox(width: 8),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Welcome, $welcomeName',
-              style: Theme.of(
-                context,
-              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              isMemberManager
-                  ? 'Member Manager access enabled.'
-                  : 'Have a blessed and productive day.',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            if (isMemberManager) ...[
-              const SizedBox(height: 10),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.manage_accounts_rounded,
-                      size: 18,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    const SizedBox(width: 8),
-                    const Text('Extra permissions are active'),
-                  ],
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Welcome, $welcomeName',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
                 ),
               ),
+              const SizedBox(height: 8),
+              Text(
+                isMemberManager
+                    ? 'Member Manager access enabled.'
+                    : 'Have a blessed and productive day.',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              if (isMemberManager) ...[
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.manage_accounts_rounded,
+                        size: 18,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      const SizedBox(width: 8),
+                      const Text('Extra permissions are active'),
+                    ],
+                  ),
+                ),
+              ],
+              const SizedBox(height: 24),
+              Text(
+                'Top Priorities',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 12),
+              _buildGridSection(_topPriorityItems),
+              const SizedBox(height: 28),
+              Text(
+                'Info & Schedule',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 12),
+              _buildGridSection(_secondaryItems),
+              const SizedBox(height: 28),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () async {
+                    await context.read<AuthProvider>().logout();
+                    if (!context.mounted) return;
+                    Navigator.pushNamedAndRemoveUntil(
+                      context,
+                      AppRoutes.login,
+                      (_) => false,
+                    );
+                  },
+                  icon: const Icon(Icons.logout_rounded),
+                  label: const Text('Logout'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.red.shade700,
+                    side: BorderSide(color: Colors.red.shade300),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
             ],
-            const SizedBox(height: 24),
-            // TOP PRIORITIES Section
-            Text(
-              'Top Priorities',
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 12),
-            _buildGridSection(_topPriorityItems),
-            const SizedBox(height: 28),
-            // SECONDARY Section
-            Text(
-              'Info & Schedule',
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 12),
-            _buildGridSection(_secondaryItems),
-            const SizedBox(height: 16),
-          ],
+          ),
         ),
       ),
     );

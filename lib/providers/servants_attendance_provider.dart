@@ -55,7 +55,7 @@ class ServantsAttendanceProvider extends ChangeNotifier {
   bool get isManager => _currentUser?.role == UserRole.manager;
   bool get isMemberManager => _currentUser?.role == UserRole.memberManager;
   bool get isMember => _currentUser?.role == UserRole.member;
-  bool get canEdit => isMemberManager;
+  bool get canEdit => isMemberManager || isMember || isManager;
 
   bool get hasPendingChanges {
     if (_draft.isEmpty) return false;
@@ -219,7 +219,7 @@ class ServantsAttendanceProvider extends ChangeNotifier {
   Future<void> saveAttendance() async {
     final user = _currentUser;
     if (user == null) throw Exception('User not ready.');
-    if (!canEdit) throw Exception('Only member manager can save attendance.');
+    if (!canEdit) throw Exception('You are not allowed to save attendance.');
     if (_selectedStage.trim().isEmpty)
       throw Exception('Stage is not selected.');
     if (_servants.isEmpty) throw Exception('No servants loaded.');

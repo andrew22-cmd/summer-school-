@@ -4,6 +4,7 @@ import 'package:summerschool/core/constants/app_colors.dart';
 import 'package:summerschool/models/class_member_model.dart';
 import 'package:summerschool/providers/auth_provider.dart';
 import 'package:summerschool/providers/points_provider.dart';
+import 'package:summerschool/services/pdf_service.dart';
 
 class StudentPointsRecordScreen extends StatefulWidget {
   const StudentPointsRecordScreen({super.key, this.student});
@@ -17,11 +18,76 @@ class StudentPointsRecordScreen extends StatefulWidget {
 
 class _StudentPointsRecordScreenState extends State<StudentPointsRecordScreen> {
   String? _startedStage;
+  bool _isExportingPdf = false;
+  final PdfService _pdfService = const PdfService();
 
   String _formatDate(DateTime dt) {
     final local = dt.toLocal();
     String two(int v) => v.toString().padLeft(2, '0');
     return '${local.year}/${two(local.month)}/${two(local.day)}';
+  }
+
+  Future<void> _exportAndSharePointsPdf({
+    required String stage,
+    required PointsProvider provider,
+  }) async {
+    if (_isExportingPdf) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+    final rows = provider.history
+        .map(
+          (item) => [
+            _formatDate(item.createdAt),
+            item.studentName,
+            item.isAdd ? 'Add' : 'Remove',
+            '${item.isAdd ? '+' : '-'}${item.points}',
+            item.reason,
+            item.createdByName,
+            '${item.totalPointsBefore}',
+            '${item.totalPointsAfter}',
+            stage,
+          ],
+        )
+        .toList();
+
+    if (rows.isEmpty) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('No points history available to export.')),
+      );
+      return;
+    }
+
+    setState(() => _isExportingPdf = true);
+    try {
+      await _pdfService.generateAndShareTablePdf(
+        title: widget.student == null
+            ? 'Student Points History - $stage'
+            : '${widget.student!.name} Points History',
+        headers: const [
+          'Date',
+          'Student',
+          'Action',
+          'Points',
+          'Reason',
+          'Added By',
+          'Before',
+          'After',
+          'Stage',
+        ],
+        data: rows,
+      );
+      if (!mounted) return;
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Points history PDF ready to share.')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text('Failed to export points PDF: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _isExportingPdf = false);
+    }
   }
 
   @override
@@ -69,6 +135,19 @@ class _StudentPointsRecordScreenState extends State<StudentPointsRecordScreen> {
               ? '${widget.student!.name} Points Record'
               : 'Student Points Record System',
         ),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _isExportingPdf
+            ? null
+            : () => _exportAndSharePointsPdf(stage: stage, provider: provider),
+        icon: _isExportingPdf
+            ? const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(Icons.picture_as_pdf_rounded),
+        label: Text(_isExportingPdf ? 'Exporting...' : 'Export & Share'),
       ),
       body: SafeArea(
         child: Padding(

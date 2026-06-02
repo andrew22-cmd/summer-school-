@@ -59,21 +59,6 @@ class ManagerHomeScreen extends StatelessWidget {
             },
             icon: const Icon(Icons.person_rounded, size: appBarIconSize),
           ),
-          const SizedBox(width: 2),
-          IconButton(
-            tooltip: 'Logout',
-            onPressed: () async {
-              await context.read<AuthProvider>().logout();
-              if (!context.mounted) return;
-              Navigator.pushNamedAndRemoveUntil(
-                context,
-                AppRoutes.login,
-                (_) => false,
-              );
-            },
-            icon: const Icon(Icons.logout_rounded, size: appBarIconSize),
-          ),
-          const SizedBox(width: 6),
         ],
       ),
       body: LayoutBuilder(
@@ -152,6 +137,29 @@ class ManagerHomeScreen extends StatelessWidget {
                             return _ManagerMenuCard(item: item, accented: true);
                           },
                         ),
+                        const SizedBox(height: 28),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: () async {
+                              await context.read<AuthProvider>().logout();
+                              if (!context.mounted) return;
+                              Navigator.pushNamedAndRemoveUntil(
+                                context,
+                                AppRoutes.login,
+                                (_) => false,
+                              );
+                            },
+                            icon: const Icon(Icons.logout_rounded),
+                            label: const Text('Logout'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.red.shade700,
+                              side: BorderSide(color: Colors.red.shade300),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
                       ],
                     ),
                   ),

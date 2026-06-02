@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import 'package:summerschool/constants/user_roles.dart';
 import 'package:summerschool/core/routes/app_routes.dart';
 import 'package:summerschool/models/user_model.dart';
 import 'package:summerschool/providers/admin_users_provider.dart';
+import 'package:summerschool/services/backup_service.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -15,12 +17,129 @@ class AdminDashboardScreen extends StatefulWidget {
 
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   final TextEditingController _searchController = TextEditingController();
+  final BackupService _backupService = BackupService();
   String _searchQuery = '';
+  bool _isBackingUp = false;
 
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  Future<void> _createBackup() async {
+    if (_isBackingUp) return;
+    setState(() => _isBackingUp = true);
+
+    try {
+      final backup = await _backupService.createBackup();
+      if (!mounted) return;
+
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Backup created'),
+          content: SelectableText(
+            'File name: ${backup.fileName}\nSize: ${(backup.sizeBytes / 1024).toStringAsFixed(1)} KB',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Backup failed'),
+          content: Text(e.toString()),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Close'),
+            ),
+          ],
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isBackingUp = false);
+    }
+  }
+
+  Future<void> _showBackups() async {
+    final backups = await _backupService.getBackups();
+    if (!mounted) return;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (context) {
+        return SafeArea(
+          child: SizedBox(
+            height: MediaQuery.of(context).size.height * 0.72,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Backups',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 12),
+                  if (backups.isEmpty)
+                    const Text('No backups found.')
+                  else
+                    Expanded(
+                      child: ListView.separated(
+                        itemCount: backups.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 8),
+                        itemBuilder: (context, index) {
+                          final backup = backups[index];
+                          return Card(
+                            child: ListTile(
+                              title: Text(backup.fileName),
+                              subtitle: Text(
+                                '${DateFormat('yyyy-MM-dd HH:mm:ss').format(backup.createdAt)} • ${(backup.sizeBytes / 1024).toStringAsFixed(1)} KB',
+                              ),
+                              trailing: Wrap(
+                                spacing: 8,
+                                children: [
+                                  IconButton(
+                                    tooltip: 'Share',
+                                    onPressed: () async {
+                                      await _backupService.shareBackup(backup);
+                                    },
+                                    icon: const Icon(Icons.share_rounded),
+                                  ),
+                                  IconButton(
+                                    tooltip: 'Delete',
+                                    onPressed: () async {
+                                      await _backupService.deleteBackup(backup);
+                                      if (mounted) Navigator.pop(context);
+                                      await _showBackups();
+                                    },
+                                    icon: const Icon(Icons.delete_rounded),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   List<UserModel> _filterUsers(List<UserModel> users) {
@@ -420,6 +539,34 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     title: 'Member Managers',
                     value: memberManagers.toString(),
                     icon: Icons.manage_accounts_rounded,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _isBackingUp ? null : _createBackup,
+                    icon: _isBackingUp
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.backup_rounded),
+                    label: Text(
+                      _isBackingUp ? 'Creating Backup...' : 'Create Backup',
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _isBackingUp ? null : _showBackups,
+                    icon: const Icon(Icons.folder_open_rounded),
+                    label: const Text('View Backups'),
                   ),
                 ),
               ],
