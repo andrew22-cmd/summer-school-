@@ -46,11 +46,12 @@ jobs:
           NOTIF_TOKEN: ${{ github.event.inputs.token }}
         run: |
           node -e "
-          const admin = require('firebase-admin');
+          const { initializeApp, cert } = require('firebase-admin/app');
+          const { getMessaging } = require('firebase-admin/messaging');
           const serviceAccount = require('./serviceAccountKey.json');
 
-          admin.initializeApp({
-            credential: admin.credential.cert(serviceAccount)
+          initializeApp({
+            credential: cert(serviceAccount)
           });
 
           async function send() {
@@ -85,7 +86,7 @@ jobs:
 
               console.log('SENDING_MESSAGE:', JSON.stringify(message, null, 2));
 
-              const response = await admin.messaging().send(message);
+              const response = await getMessaging().send(message);
               console.log('SUCCESS: Firebase response =', response);
             } catch (e) {
               console.error('ERROR_NAME:', e?.name || 'UnknownError');
