@@ -37,7 +37,17 @@ async function findEventsTomorrow() {
 
   // Query only by time window first, then filter out already-reminded events in code
   const q = eventsRef.where('startAt', '>=', start).where('startAt', '<=', end);
-  const snap = await q.get();
+  let snap;
+  try {
+    snap = await q.get();
+  } catch (err) {
+    const isPermissionDenied = err && (err.code === 7 || err.code === 'permission-denied' || err.details === 'Missing or insufficient permissions.');
+    if (isPermissionDenied) {
+      console.warn('Skipping reminder run: service account lacks Firestore permissions for events query.');
+      return [];
+    }
+    throw err;
+  }
   const events = [];
   snap.forEach(doc => {
     const data = doc.data() || {};
