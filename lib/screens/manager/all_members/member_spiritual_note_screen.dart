@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:summerschool/core/constants/app_colors.dart';
+import 'package:summerschool/core/localization/app_localizations.dart';
 import 'package:summerschool/providers/auth_provider.dart';
 import 'package:summerschool/providers/spiritual_note_provider.dart';
 import 'package:summerschool/services/spiritual_note_service.dart';
@@ -70,7 +71,7 @@ class _MemberSpiritualNoteViewState extends State<_MemberSpiritualNoteView> {
 
     if (!auth.isManager) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Spiritual Notes')),
+        appBar: AppBar(title: Text(context.tr('spiritual_note'))),
         body: const Center(child: Text('Only manager can access notes.')),
       );
     }
@@ -80,7 +81,7 @@ class _MemberSpiritualNoteViewState extends State<_MemberSpiritualNoteView> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         foregroundColor: AppColors.primary,
-        title: const Text('Member Spiritual Notes'),
+        title: Text(context.tr('spiritual_note')),
       ),
       body: SafeArea(
         child: Padding(

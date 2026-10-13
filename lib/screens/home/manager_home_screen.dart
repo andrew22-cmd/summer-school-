@@ -4,6 +4,8 @@ import 'package:summerschool/core/routes/app_routes.dart';
 import 'package:summerschool/providers/auth_provider.dart';
 import 'package:summerschool/widgets/common/notification_popup.dart';
 import 'package:summerschool/services/notification_service.dart';
+import 'package:summerschool/providers/locale_provider.dart';
+import 'package:summerschool/core/localization/app_localizations.dart';
 
 class ManagerHomeScreen extends StatelessWidget {
   const ManagerHomeScreen({super.key});
@@ -30,34 +32,89 @@ class ManagerHomeScreen extends StatelessWidget {
     final welcomeName = fullName.isEmpty
         ? 'Manager'
         : fullName.split(RegExp(r'\s+')).first;
-    const appBarIconSize = 24.0;
+
 
     return Scaffold(
       appBar: AppBar(
         title: const SizedBox.shrink(),
         actions: [
-          const SizedBox(width: 4),
-          Builder(
-            builder: (context) {
-              final userId = context.read<AuthProvider>().user?.id;
-              if (userId == null) return const SizedBox.shrink();
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Row(
+              children: [
+                PopupMenuButton<String>(
+                  tooltip: context.tr('select_lang'),
+                  onSelected: (value) async {
+                    final localeProv = context.read<LocaleProvider>();
+                    if (value == 'en') {
+                      await localeProv.setLocale(const Locale('en'));
+                    } else if (value == 'ar') {
+                      await localeProv.setLocale(const Locale('ar'));
+                    }
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.language_rounded, size: 28),
+                        const SizedBox(width: 8),
+                        Text(
+                          context.tr('select_lang'),
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                  ),
+                  itemBuilder: (context) => const [
+                    PopupMenuItem(
+                      value: 'en',
+                      child: Text('English 🇬🇧'),
+                    ),
+                    PopupMenuItem(
+                      value: 'ar',
+                      child: Text('العربية 🇪🇬'),
+                    ),
+                  ],
+                ),
+                const SizedBox(width: 16),
+                InkWell(
+                  borderRadius: BorderRadius.circular(8),
+                  onTap: () {
+                    Navigator.pushNamed(context, AppRoutes.profile);
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.person_rounded, size: 28),
+                        const SizedBox(width: 8),
+                        Text(
+                          context.tr('profile'),
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Builder(
+                  builder: (context) {
+                    final userId = context.read<AuthProvider>().user?.id;
+                    if (userId == null) return const SizedBox.shrink();
 
-              return StreamBuilder<int>(
-                stream: _notificationService.watchUnreadCount(userId),
-                builder: (context, snapshot) {
-                  final unread = snapshot.data ?? 0;
-                  return _NotificationBellDropdown(unread: unread);
-                },
-              );
-            },
-          ),
-          const SizedBox(width: 2),
-          IconButton(
-            tooltip: 'Profile',
-            onPressed: () {
-              Navigator.pushNamed(context, AppRoutes.profile);
-            },
-            icon: const Icon(Icons.person_rounded, size: appBarIconSize),
+                    return StreamBuilder<int>(
+                      stream: _notificationService.watchUnreadCount(userId),
+                      builder: (context, snapshot) {
+                        final unread = snapshot.data ?? 0;
+                        return _NotificationBellDropdown(unread: unread);
+                      },
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -76,14 +133,14 @@ class ManagerHomeScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Welcome, $welcomeName',
+                  context.tr('welcome_name').replaceAll('{name}', welcomeName),
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.w800,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Manage summer school activities, classes, and members.',
+                  context.tr('manager_subtitle'),
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
                 const SizedBox(height: 20),
@@ -93,7 +150,7 @@ class ManagerHomeScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Management & Overview',
+                        context.tr('management_overview'),
                           style: Theme.of(context).textTheme.titleMedium
                               ?.copyWith(fontWeight: FontWeight.w800),
                         ),
@@ -116,7 +173,7 @@ class ManagerHomeScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 24),
                         Text(
-                          'Quick Actions',
+                          context.tr('quick_actions'),
                           style: Theme.of(context).textTheme.titleMedium
                               ?.copyWith(fontWeight: FontWeight.w800),
                         ),
@@ -151,7 +208,7 @@ class ManagerHomeScreen extends StatelessWidget {
                               );
                             },
                             icon: const Icon(Icons.logout_rounded),
-                            label: const Text('Logout'),
+                            label: Text(context.tr('logout')),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: Colors.red.shade700,
                               side: BorderSide(color: Colors.red.shade300),
@@ -262,7 +319,7 @@ class _ManagerMenuCard extends StatelessWidget {
               ),
               const SizedBox(height: 14),
               Text(
-                item.title,
+                context.tr(item.title),
                 textAlign: TextAlign.center,
                 style: Theme.of(
                   context,
@@ -306,10 +363,23 @@ class _NotificationBellDropdown extends StatelessWidget {
           ),
         ),
       ],
-      child: Badge(
-        isLabelVisible: unread > 0,
-        label: Text('$unread'),
-        child: const Icon(Icons.notifications_rounded, size: 24),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Badge(
+              isLabelVisible: unread > 0,
+              label: Text('$unread'),
+              child: const Icon(Icons.notifications_rounded, size: 28),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              context.tr('notifications'),
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
       ),
     );
   }

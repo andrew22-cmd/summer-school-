@@ -7,6 +7,7 @@ import 'package:summerschool/providers/auth_provider.dart';
 import 'package:summerschool/providers/weekly_schedule_provider.dart';
 import 'package:summerschool/screens/schedule/add_weekly_schedule_item_screen.dart';
 import 'package:summerschool/services/weekly_schedule_service.dart';
+import 'package:summerschool/core/localization/app_localizations.dart';
 
 class WeeklyScheduleScreen extends StatefulWidget {
   const WeeklyScheduleScreen({
@@ -30,6 +31,9 @@ class _WeeklyScheduleScreenState extends State<WeeklyScheduleScreen> {
   void initState() {
     super.initState();
     _provider = WeeklyScheduleProvider(service: WeeklyScheduleService());
+    _provider.selectDay(
+      WeeklyScheduleDays.defaultSelectedDayForWeek(_selectedWeekStart),
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final auth = context.read<AuthProvider>();
@@ -64,7 +68,7 @@ class _WeeklyScheduleScreenState extends State<WeeklyScheduleScreen> {
           appBar: AppBar(
             backgroundColor: Colors.white,
             foregroundColor: AppColors.primary,
-            title: const Text('Weekly Stage Schedule'),
+            title: Text(context.tr('weekly_stage_schedule')),
           ),
           floatingActionButton: canManage
               ? FloatingActionButton(
@@ -73,7 +77,8 @@ class _WeeklyScheduleScreenState extends State<WeeklyScheduleScreen> {
                     stage: stage,
                     initialDay: _provider.selectedDay,
                   ),
-                  child: const Icon(Icons.add_rounded),
+                  backgroundColor: AppColors.primary,
+                  child: const Icon(Icons.add_rounded, color: Colors.white),
                 )
               : null,
           body: SafeArea(
@@ -106,7 +111,7 @@ class _WeeklyScheduleScreenState extends State<WeeklyScheduleScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Current day: ${WeeklyScheduleDays.arabicLabel(context.watch<WeeklyScheduleProvider>().selectedDay)} - ${intl.DateFormat('yyyy/MM/dd').format(_dateForSelectedDay(context.watch<WeeklyScheduleProvider>().selectedDay))}',
+                        '${context.tr('current_day')}: ${context.tr(context.watch<WeeklyScheduleProvider>().selectedDay)} - ${intl.DateFormat('yyyy/MM/dd').format(_dateForSelectedDay(context.watch<WeeklyScheduleProvider>().selectedDay))}',
                         style: const TextStyle(fontWeight: FontWeight.w700),
                       ),
                       const SizedBox(height: 10),
@@ -234,10 +239,7 @@ class _WeeklyScheduleScreenState extends State<WeeklyScheduleScreen> {
   }
 
   DateTime _dateForSelectedDay(String selectedDay) {
-    if (selectedDay == WeeklyScheduleDays.wednesday) {
-      return _selectedWeekStart.add(const Duration(days: 4));
-    }
-    return _selectedWeekStart;
+    return WeeklyScheduleDays.dateForDay(selectedDay, _selectedWeekStart);
   }
 
   static DateTime _weekStartOf(DateTime date) {
@@ -288,9 +290,9 @@ class _WeekSelectorCard extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 child: Column(
                   children: [
-                    const Text(
-                      'Selected week',
-                      style: TextStyle(fontWeight: FontWeight.w700),
+                    Text(
+                      context.tr('selected_week'),
+                      style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -328,29 +330,32 @@ class _HeaderCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         gradient: LinearGradient(
           colors: [
-            AppColors.primary.withOpacity(0.95),
-            AppColors.primary.withOpacity(0.75),
+            AppColors.primary.withValues(alpha: 0.95),
+            AppColors.primary.withValues(alpha: 0.75),
           ],
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'WEEKLY STAGE SCHEDULE',
-            style: TextStyle(
+          Text(
+            context.tr('weekly_stage_schedule_caps'),
+            style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.w800,
               fontSize: 19,
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
-            'Weekly Stage Schedule',
-            style: TextStyle(color: Colors.white70),
+          Text(
+            context.tr('weekly_stage_schedule'),
+            style: const TextStyle(color: Colors.white70),
           ),
           const SizedBox(height: 8),
-          Text('Stage: $stage', style: const TextStyle(color: Colors.white)),
+          Text(
+            '${context.tr('stage')}: $stage',
+            style: const TextStyle(color: Colors.white),
+          ),
         ],
       ),
     );
@@ -365,8 +370,6 @@ class _DayToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const selectedColor = AppColors.secondary;
-
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -374,26 +377,27 @@ class _DayToggle extends StatelessWidget {
         border: Border.all(color: Colors.grey.shade300),
       ),
       padding: const EdgeInsets.all(8),
-      child: Row(
-        children: [
-          Expanded(
-            child: _DayButton(
-              label: 'Sunday',
-              selected: selectedDay == WeeklyScheduleDays.sunday,
-              selectedColor: selectedColor,
-              onTap: () => onChanged(WeeklyScheduleDays.sunday),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _DayButton(
-              label: 'Wednesday',
-              selected: selectedDay == WeeklyScheduleDays.wednesday,
-              selectedColor: selectedColor,
-              onTap: () => onChanged(WeeklyScheduleDays.wednesday),
-            ),
-          ),
-        ],
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final itemWidth =
+              constraints.maxWidth / WeeklyScheduleDays.values.length;
+          return Row(
+            children: WeeklyScheduleDays.values.map((day) {
+              final isSelected = selectedDay == day;
+              return SizedBox(
+                width: itemWidth,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: _DayButton(
+                    label: context.tr(WeeklyScheduleDays.arabicLabel(day)),
+                    selected: isSelected,
+                    onTap: () => onChanged(day),
+                  ),
+                ),
+              );
+            }).toList(),
+          );
+        },
       ),
     );
   }
@@ -403,36 +407,58 @@ class _DayButton extends StatelessWidget {
   const _DayButton({
     required this.label,
     required this.selected,
-    required this.selectedColor,
     required this.onTap,
   });
 
   final String label;
   final bool selected;
-  final Color selectedColor;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(12),
-      onTap: onTap,
-      child: Ink(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: selected ? selectedColor : Colors.grey.shade100,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: selected ? selectedColor : Colors.grey.shade300,
+    final fillColor = selected ? Colors.white : Colors.grey.shade50;
+    final borderColor = selected ? AppColors.primary : Colors.grey.shade200;
+    final textColor = AppColors.primary;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        splashColor: AppColors.primary.withValues(alpha: 0.12),
+        highlightColor: AppColors.primary.withValues(alpha: 0.08),
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeInOut,
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: fillColor,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: borderColor, width: selected ? 1.8 : 1.0),
+            boxShadow: selected
+                ? [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.12),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.025),
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
           ),
-        ),
-        child: Text(
-          label,
-          textAlign: TextAlign.center,
-          maxLines: 2,
-          style: TextStyle(
-            color: selected ? AppColors.primary : AppColors.textPrimary,
-            fontWeight: FontWeight.w700,
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            style: TextStyle(
+              color: textColor,
+              fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+            ),
           ),
         ),
       ),
@@ -471,7 +497,7 @@ class _TimelineItemCard extends StatelessWidget {
               Container(
                 width: 2,
                 height: 96,
-                color: AppColors.primary.withOpacity(0.25),
+                color: AppColors.primary.withValues(alpha: 0.25),
               ),
             ],
           ),
@@ -489,7 +515,7 @@ class _TimelineItemCard extends StatelessWidget {
                   border: Border.all(color: Colors.grey.shade300),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
+                      color: Colors.black.withValues(alpha: 0.04),
                       blurRadius: 8,
                       offset: const Offset(0, 4),
                     ),

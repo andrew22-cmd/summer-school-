@@ -36,35 +36,40 @@ class SpiritualNotebookService {
     return watchNotebook(userId, weekStartDate: weekStartDate);
   }
 
+  static String _normalizeStage(String stage) =>
+      stage.trim().replaceAll(' ', '').toLowerCase();
+
+  /// Real-time stream filtered server-side by role AND stage_norm.
+  /// Requires a composite Firestore index on: role + stage_norm.
   Stream<List<UserModel>> watchMembersInStage(String stage) {
-    // Query by role only, filter stage in-memory to avoid composite index
+    final stageNorm = _normalizeStage(stage);
     return _firestore
         .collection('users')
         .where('role', isEqualTo: UserRole.member.value)
+        .where('stage_norm', isEqualTo: stageNorm) // Server-side stage filter
         .snapshots()
         .map((snapshot) {
-          final users =
-              snapshot.docs
-                  .map((doc) => UserModel.fromMap(doc.data()))
-                  .where((user) => user.stage.trim() == stage.trim())
-                  .toList()
-                ..sort(
-                  (a, b) =>
-                      a.name.toLowerCase().compareTo(b.name.toLowerCase()),
-                );
+          final users = snapshot.docs
+              .map((doc) => UserModel.fromMap(doc.data()))
+              .toList()
+            ..sort(
+              (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+            );
           return users;
         });
   }
 
+  /// One-time fetch filtered server-side by role AND stage_norm.
+  /// Requires a composite Firestore index on: role + stage_norm.
   Future<List<UserModel>> getMembersInStage(String stage) async {
-    // Query by role only, filter stage in-memory to avoid composite index
+    final stageNorm = _normalizeStage(stage);
     final snapshot = await _firestore
         .collection('users')
         .where('role', isEqualTo: UserRole.member.value)
+        .where('stage_norm', isEqualTo: stageNorm) // Server-side stage filter
         .get();
     return snapshot.docs
         .map((doc) => UserModel.fromMap(doc.data()))
-        .where((user) => user.stage.trim() == stage.trim())
         .toList()
       ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
   }

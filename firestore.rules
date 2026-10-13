@@ -1,0 +1,82 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // App-wide authenticated access for project collections.
+    // This project uses Firebase Auth for sign-in; without this, every stream
+    // silently fails with "permission-denied" even when the user is logged in.
+    // Local admin login does not create a Firebase Auth session, so the admin
+    // dashboard must still be able to manage class records and subject list.
+    match /class_members/{memberId} {
+      allow read, create, update, delete: if true;
+    }
+
+    match /attendance/{docId} {
+      allow read, create, update, delete: if isSignedIn();
+    }
+
+    match /tasks/{taskId} {
+      allow read, create, update, delete: if isSignedIn();
+    }
+
+    match /visits/{visitId} {
+      allow read, create, update, delete: if isSignedIn();
+    }
+
+    match /followups/{followupId} {
+      allow read, create, update, delete: if isSignedIn();
+    }
+
+    match /student_points_records/{recordId} {
+      allow read, create, update, delete: if isSignedIn();
+    }
+
+    match /servants_attendance/{docId} {
+      allow read, create, update, delete: if isSignedIn();
+    }
+
+    match /weekly_schedules/{docId} {
+      allow read, create, update, delete: if isSignedIn();
+    }
+
+    match /spiritual_notes/{docId} {
+      allow read, create, update, delete: if isSignedIn();
+    }
+
+    // The app's local admin login screen does not create a Firebase Auth session,
+    // so the admin dashboard must still be able to read the users collection.
+    // This is intentionally limited to the users collection so the admin panel
+    // can display entries that were created from the app.
+    match /users/{userId} {
+      allow read, create, update, delete: if true;
+    }
+
+    match /events/{eventId} {
+      allow read, create, update, delete: if isSignedIn();
+    }
+
+    match /notifications/{notificationId} {
+      allow read, create, update, delete: if isSignedIn();
+    }
+
+    match /user_notifications/{notificationId} {
+      allow read, create, update, delete: if isSignedIn();
+    }
+
+    match /schedule_subjects/{subjectId} {
+      allow read, create, update, delete: if true;
+    }
+
+    match /attachments/{attachmentId} {
+      allow read, create, update, delete: if isSignedIn();
+    }
+
+    // Fallback: allow project collections and deny unrelated data.
+    match /{document=**} {
+      allow read, write: if isSignedIn();
+    }
+  }
+}

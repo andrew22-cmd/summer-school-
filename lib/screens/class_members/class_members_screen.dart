@@ -11,6 +11,7 @@ import 'package:summerschool/services/points_service.dart';
 import 'package:summerschool/models/class_member_model.dart';
 import 'package:summerschool/screens/class_members/add_edit_class_member_screen.dart';
 import 'package:summerschool/screens/points/points_history_screen.dart';
+import 'package:summerschool/core/localization/app_localizations.dart';
 
 class ClassMembersScreen extends StatefulWidget {
   const ClassMembersScreen({super.key});
@@ -100,10 +101,10 @@ class _ClassMembersScreenState extends State<ClassMembersScreen> {
           appBar: AppBar(
             backgroundColor: Colors.white,
             foregroundColor: AppColors.primary,
-            title: Text('Class: ${user.stage}'),
+            title: Text('${context.tr('class_title')}: ${user.stage}'),
           ),
 
-          floatingActionButton: auth.isMemberManager
+          floatingActionButton: auth.isManager
               ? FloatingActionButton(
                   onPressed: () async {
                     final created = await Navigator.push<ClassMemberModel?>(
@@ -120,7 +121,7 @@ class _ClassMembersScreenState extends State<ClassMembersScreen> {
                     if (created != null) {}
                   },
                   backgroundColor: AppColors.primary,
-                  child: const Icon(Icons.add),
+                  child: const Icon(Icons.add, color: Colors.white),
                 )
               : null,
 
@@ -135,7 +136,7 @@ class _ClassMembersScreenState extends State<ClassMembersScreen> {
 
                     decoration: InputDecoration(
                       prefixIcon: const Icon(Icons.search_rounded),
-                      hintText: 'Search by name',
+                      hintText: context.tr('search'),
                       filled: true,
                       fillColor: Colors.white,
 
@@ -153,7 +154,9 @@ class _ClassMembersScreenState extends State<ClassMembersScreen> {
                         ? const Center(child: CircularProgressIndicator())
                         : members.isEmpty
                         ? Center(
-                            child: Text('No students found for ${user.stage}'),
+                            child: Text(
+                              '${context.tr('no_data')} ${user.stage}',
+                            ),
                           )
                         : SingleChildScrollView(
                             scrollDirection: Axis.horizontal,
@@ -169,10 +172,10 @@ class _ClassMembersScreenState extends State<ClassMembersScreen> {
                                   width: 1,
                                 ),
 
-                                columns: const [
+                                columns: [
                                   DataColumn(
                                     label: Text(
-                                      'Name',
+                                      context.tr('name'),
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                       ),
@@ -181,7 +184,7 @@ class _ClassMembersScreenState extends State<ClassMembersScreen> {
 
                                   DataColumn(
                                     label: Text(
-                                      'Stage',
+                                      context.tr('stage'),
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                       ),
@@ -190,7 +193,7 @@ class _ClassMembersScreenState extends State<ClassMembersScreen> {
 
                                   DataColumn(
                                     label: Text(
-                                      'Year',
+                                      context.tr('points'),
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                       ),
@@ -199,7 +202,7 @@ class _ClassMembersScreenState extends State<ClassMembersScreen> {
 
                                   DataColumn(
                                     label: Text(
-                                      'Phone',
+                                      context.tr('phone'),
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                       ),
@@ -208,7 +211,7 @@ class _ClassMembersScreenState extends State<ClassMembersScreen> {
 
                                   DataColumn(
                                     label: Text(
-                                      'Parent Phone',
+                                      context.tr('parent_phone'),
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                       ),
@@ -217,7 +220,7 @@ class _ClassMembersScreenState extends State<ClassMembersScreen> {
 
                                   DataColumn(
                                     label: Text(
-                                      'Confession Father',
+                                      context.tr('confession_father'),
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                       ),
@@ -226,7 +229,7 @@ class _ClassMembersScreenState extends State<ClassMembersScreen> {
 
                                   DataColumn(
                                     label: Text(
-                                      'Points',
+                                      context.tr('points'),
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                       ),
@@ -235,7 +238,7 @@ class _ClassMembersScreenState extends State<ClassMembersScreen> {
 
                                   DataColumn(
                                     label: Text(
-                                      'Actions',
+                                      context.tr('actions'),
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                       ),
@@ -248,7 +251,7 @@ class _ClassMembersScreenState extends State<ClassMembersScreen> {
                                     cells: [
                                       DataCell(Text(m.name)),
                                       DataCell(Text(m.stage)),
-                                      DataCell(Text(m.year)),
+                                      DataCell(Text(m.totalPoints.toString())),
                                       DataCell(Text(m.phone)),
                                       DataCell(Text(m.parentPhone)),
                                       DataCell(Text(m.confessionFather)),
@@ -302,7 +305,7 @@ class _ClassMembersScreenState extends State<ClassMembersScreen> {
                                               ),
                                             ),
 
-                                            if (auth.isMemberManager)
+                                            if (auth.isManager)
                                               IconButton(
                                                 tooltip: 'Edit',
                                                 iconSize: 18,
@@ -337,7 +340,7 @@ class _ClassMembersScreenState extends State<ClassMembersScreen> {
                                                 ),
                                               ),
 
-                                            if (auth.isMemberManager)
+                                            if (auth.isManager)
                                               IconButton(
                                                 tooltip: 'Delete',
                                                 iconSize: 18,

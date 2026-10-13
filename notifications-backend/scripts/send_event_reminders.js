@@ -52,19 +52,23 @@ async function sendReminderForEvent(event) {
   // Expect event.topic or construct topic name from event.id
   const topic = event.topic || `event_${event.id}`;
 
-  const payload = {
+  const message = {
     notification: {
       title: `Reminder: ${event.title || 'Upcoming event'}`,
-      body: event.description ? `${event.description}` : `Happening tomorrow at ${new Date(event.startAt._seconds * 1000).toUTCString()}`,
+      body: event.description
+        ? `${event.description}`
+        : `Happening tomorrow at ${new Date(event.startAt._seconds * 1000).toUTCString()}`,
     },
     data: {
       eventId: event.id,
       type: 'event_reminder',
     },
+    topic: topic,
+    android: { priority: 'high' },
   };
 
   console.log(`Sending reminder to topic: ${topic}`);
-  const res = await admin.messaging().sendToTopic(topic, payload);
+  const res = await admin.messaging().send(message);
   console.log('FCM result:', res);
 
   // Mark reminder as sent on the event document to avoid double-sends

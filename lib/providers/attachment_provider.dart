@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:async';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
@@ -150,7 +149,7 @@ class AttachmentProvider extends ChangeNotifier {
 
   /// Upload attachment file to Firebase Storage and Firestore
   Future<void> uploadAttachmentWithProgress({
-    required File file,
+    required dynamic file,
     required String fileName,
     required String title,
     required String stage,

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:summerschool/constants/user_roles.dart';
 import 'package:summerschool/providers/auth_provider.dart';
 import 'package:summerschool/services/notification_service.dart';
+import 'package:summerschool/core/localization/app_localizations.dart';
 
 class SendNotificationScreen extends StatefulWidget {
   const SendNotificationScreen({super.key});
@@ -17,7 +18,6 @@ class _SendNotificationScreenState extends State<SendNotificationScreen> {
   final TextEditingController _bodyController = TextEditingController();
 
   final Set<String> _targetRoles = <String>{};
-  final Set<String> _targetStages = <String>{};
   bool _isImportant = false;
   bool _isLoading = false;
 
@@ -35,8 +35,8 @@ class _SendNotificationScreenState extends State<SendNotificationScreen> {
     if (user == null) return;
     if (user.role == UserRole.member) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('You are not allowed to send notifications.'),
+        SnackBar(
+          content: Text(context.tr('not_allowed_send')),
         ),
       );
       return;
@@ -47,22 +47,12 @@ class _SendNotificationScreenState extends State<SendNotificationScreen> {
 
     if (title.isEmpty || body.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter title and message.')),
+        SnackBar(content: Text(context.tr('enter_title_body'))),
       );
       return;
     }
 
-    if (user.role == UserRole.manager &&
-        _targetRoles.isEmpty &&
-        _targetStages.isNotEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'If you select stages only, notifications will be sent to all roles within those stages.',
-          ),
-        ),
-      );
-    }
+
 
     setState(() {
       _isLoading = true;
@@ -74,7 +64,7 @@ class _SendNotificationScreenState extends State<SendNotificationScreen> {
         title: title,
         body: body,
         targetRoles: _targetRoles.toList(),
-        targetStages: _targetStages.toList(),
+        targetStages: [],
         isImportant: _isImportant,
       );
 
@@ -83,13 +73,12 @@ class _SendNotificationScreenState extends State<SendNotificationScreen> {
         _bodyController.clear();
         setState(() {
           _targetRoles.clear();
-          _targetStages.clear();
           _isImportant = false;
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('In-app notification sent successfully.'),
+          SnackBar(
+            content: Text(context.tr('notification_sent_success')),
             backgroundColor: Colors.green,
           ),
         );
@@ -98,7 +87,7 @@ class _SendNotificationScreenState extends State<SendNotificationScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: ${e.toString()}'),
+            content: Text('${context.tr('notification_send_error')}: ${e.toString()}'),
             backgroundColor: Colors.red,
           ),
         );
@@ -115,18 +104,18 @@ class _SendNotificationScreenState extends State<SendNotificationScreen> {
     final isManager = user?.role == UserRole.manager;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Send In-App Notification')),
+      appBar: AppBar(title: Text(context.tr('send_notification_title'))),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (!canSend)
-              const Card(
+              Card(
                 child: Padding(
-                  padding: EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(16),
                   child: Text(
-                    'This page is available to managers and member managers only.',
+                    context.tr('page_for_managers'),
                   ),
                 ),
               )
@@ -147,7 +136,7 @@ class _SendNotificationScreenState extends State<SendNotificationScreen> {
                       TextField(
                         controller: _titleController,
                         decoration: InputDecoration(
-                          labelText: 'Title',
+                          labelText: context.tr('notification_title'),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
@@ -160,7 +149,7 @@ class _SendNotificationScreenState extends State<SendNotificationScreen> {
                       TextField(
                         controller: _bodyController,
                         decoration: InputDecoration(
-                          labelText: 'Message',
+                          labelText: context.tr('notification_body'),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
@@ -173,9 +162,9 @@ class _SendNotificationScreenState extends State<SendNotificationScreen> {
                         contentPadding: EdgeInsets.zero,
                         value: _isImportant,
                         onChanged: (v) => setState(() => _isImportant = v),
-                        title: const Text('Important Notification'),
-                        subtitle: const Text(
-                          'It will be marked as important in Notification Center.',
+                        title: Text(context.tr('important_notification')),
+                        subtitle: Text(
+                          context.tr('important_notification_desc'),
                         ),
                         secondary: Icon(
                           _isImportant
@@ -198,10 +187,10 @@ class _SendNotificationScreenState extends State<SendNotificationScreen> {
                       color: Theme.of(context).colorScheme.outlineVariant,
                     ),
                   ),
-                  child: const Padding(
-                    padding: EdgeInsets.all(14),
+                  child: Padding(
+                    padding: const EdgeInsets.all(14),
                     child: Text(
-                      'It will be sent automatically to members in your class only.',
+                      context.tr('sent_to_class_only'),
                     ),
                   ),
                 ),
@@ -215,7 +204,7 @@ class _SendNotificationScreenState extends State<SendNotificationScreen> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.send_rounded),
-                label: Text(_isLoading ? 'Sending...' : 'Send In-App'),
+                label: Text(_isLoading ? context.tr('sending') : context.tr('send_in_app')),
                 style: FilledButton.styleFrom(
                   minimumSize: const Size.fromHeight(48),
                 ),
@@ -229,9 +218,9 @@ class _SendNotificationScreenState extends State<SendNotificationScreen> {
 
   Widget _buildManagerTargetsCard(BuildContext context) {
     final roleOptions = <MapEntry<String, String>>[
-      MapEntry(UserRole.manager.value, 'Managers'),
-      MapEntry(UserRole.memberManager.value, 'Member Managers'),
-      MapEntry(UserRole.member.value, 'Members'),
+      MapEntry(UserRole.manager.value, context.tr('role_managers')),
+      MapEntry(UserRole.memberManager.value, context.tr('role_member_managers')),
+      MapEntry(UserRole.member.value, context.tr('role_members')),
     ];
 
     return Card(
@@ -246,7 +235,7 @@ class _SendNotificationScreenState extends State<SendNotificationScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Target Roles',
+              context.tr('target_roles_label'),
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
@@ -270,44 +259,9 @@ class _SendNotificationScreenState extends State<SendNotificationScreen> {
                 );
               }).toList(),
             ),
-            const SizedBox(height: 14),
-            Text(
-              'Target Stages',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-            StreamBuilder<List<String>>(
-              stream: _notificationService.watchAvailableStages(),
-              builder: (context, snap) {
-                final stages = snap.data ?? const <String>[];
-                if (stages.isEmpty) {
-                  return const Text('No stages are currently available.');
-                }
-                return Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: stages.map((stage) {
-                    final selected = _targetStages.contains(stage);
-                    return FilterChip(
-                      selected: selected,
-                      label: Text(stage),
-                      onSelected: (v) {
-                        setState(() {
-                          if (v) {
-                            _targetStages.add(stage);
-                          } else {
-                            _targetStages.remove(stage);
-                          }
-                        });
-                      },
-                    );
-                  }).toList(),
-                );
-              },
-            ),
             const SizedBox(height: 8),
             Text(
-              'If no role or stage is selected, it will be sent to everyone.',
+              context.tr('no_roles_send_all'),
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ],

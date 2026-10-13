@@ -1,6 +1,6 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:typed_data';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dio/dio.dart';
@@ -222,7 +222,7 @@ class AttachmentService {
   /// Upload file to Cloudinary and save metadata to Firestore
   /// Pass senderUserModel to trigger automatic notifications
   Future<void> uploadAttachment({
-    required File file,
+    required dynamic file,
     required String fileName,
     required String title,
     required String stage,
@@ -233,7 +233,21 @@ class AttachmentService {
   }) async {
     try {
       final normalized = normalizeStage(stage);
-      final fileSize = await file.length();
+
+      final Uint8List bytes;
+      if (file is PlatformFile) {
+        bytes = file.bytes ?? Uint8List(0);
+      } else if (file is Uint8List) {
+        bytes = file;
+      } else {
+        final readAsBytes = file is dynamic ? file.readAsBytes : null;
+        if (readAsBytes == null) {
+          throw UnsupportedError('Unsupported file type for upload');
+        }
+        bytes = await file.readAsBytes();
+      }
+
+      final fileSize = bytes.length;
 
       debugPrint(
         '[ATTACHMENT SERVICE] Starting upload for fileName=$fileName, size=$fileSize bytes, targetRole=$targetRole',
@@ -242,10 +256,7 @@ class AttachmentService {
       const cloudinaryUrl =
           'https://api.cloudinary.com/v1_1/djniksauo/raw/upload';
 
-      final multipart = await MultipartFile.fromFile(
-        file.path,
-        filename: fileName,
-      );
+      final multipart = MultipartFile.fromBytes(bytes, filename: fileName);
       final formData = FormData.fromMap({
         'file': multipart,
         'upload_preset': 'summerschool',

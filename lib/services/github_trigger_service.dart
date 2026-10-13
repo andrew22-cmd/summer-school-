@@ -4,14 +4,18 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 class GitHubTriggerService {
+  // Token is injected at build time via --dart-define=GITHUB_PAT=<token>
+  // Never hardcode secrets in source code.
+  static const String _kDefaultToken = String.fromEnvironment('GITHUB_PAT');
+
   GitHubTriggerService({
-    String githubToken = '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',
+    String? githubToken,
     String repoOwner = 'andrew22-cmd',
     String repoName = 'summer-school-',
     this.workflowFile = 'send_notification.yml',
     this.ref = 'main',
     http.Client? client,
-  }) : _githubToken = githubToken,
+  }) : _githubToken = githubToken ?? _kDefaultToken,
        _repoOwner = repoOwner,
        _repoName = repoName,
        _client = client ?? http.Client();
@@ -53,7 +57,7 @@ class GitHubTriggerService {
     final tokenValid =
         _githubToken.isNotEmpty && !_githubToken.startsWith('YOUR_');
     debugPrint(
-      '[GitHubTrigger] Token valid: $tokenValid, length=${_githubToken.length}, prefix=${_githubToken.substring(0, 4)}***',
+      '[GitHubTrigger] Token valid: $tokenValid, length=${_githubToken.length}',
     );
     debugPrint('[GitHubTrigger] Repo: $_repoOwner/$_repoName');
     debugPrint('[GitHubTrigger] Workflow file: $workflowFile');
@@ -78,7 +82,9 @@ class GitHubTriggerService {
       debugPrint('[GitHubTrigger] Dispatch start');
       debugPrint('[GitHubTrigger] Dispatching workflow: $url');
       debugPrint(
-        '[GitHubTrigger] target=${hasToken ? 'token' : 'topic'} topic=${topic?.trim().isNotEmpty == true ? topic!.trim() : '[none]'} token=${hasToken ? '[provided]' : '[none]'} ref=$ref',
+        '[GitHubTrigger] target=${hasToken ? 'token' : 'topic'} '
+        'topic=${topic?.trim().isNotEmpty == true ? topic!.trim() : '[none]'} '
+        'token=${hasToken ? '[provided]' : '[none]'} ref=$ref',
       );
       debugPrint('[GitHubTrigger] workflow payload: ${jsonEncode(payload)}');
 
@@ -95,7 +101,6 @@ class GitHubTriggerService {
 
       debugPrint('[GitHubTrigger] Status: ${response.statusCode}');
       debugPrint('[GitHubTrigger] Response body: ${response.body}');
-      debugPrint('[GitHubTrigger] Response headers: ${response.headers}');
 
       if (response.statusCode == 204) {
         debugPrint(

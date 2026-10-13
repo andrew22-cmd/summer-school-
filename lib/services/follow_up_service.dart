@@ -145,25 +145,26 @@ class FollowUpService {
       return Stream<List<FollowUpModel>>.value(const []);
     }
 
-    return _firestore.collection(collection).snapshots().map((snapshot) {
-      final list =
-          snapshot.docs
+    // Server-side filtering — only matching documents are streamed.
+    // Requires a composite Firestore index on: stage_norm, month, year, visitDate.
+    return _firestore
+        .collection(collection)
+        .where('stage_norm', isEqualTo: normalized)
+        .where('month', isEqualTo: month)
+        .where('year', isEqualTo: year)
+        .orderBy('visitDate', descending: true)
+        .snapshots()
+        .map((snapshot) {
+          final list = snapshot.docs
               .map((doc) => FollowUpModel.fromMap(doc.data(), doc.id))
-              .where(
-                (item) =>
-                    normalizeStage(item.stage) == normalized &&
-                    item.month == month &&
-                    item.year == year,
-              )
-              .toList()
-            ..sort((a, b) => b.visitDate.compareTo(a.visitDate));
+              .toList();
 
-      debugPrint(
-        '[FollowUpService] monthly visits snapshot docs=${list.length} stage_norm="$normalized" month=${monthLabel(monthStart)}',
-      );
+          debugPrint(
+            '[FollowUpService] monthly visits snapshot docs=${list.length} stage_norm="$normalized" month=${monthLabel(monthStart)}',
+          );
 
-      return list;
-    });
+          return list;
+        });
   }
 
   Stream<List<FollowUpModel>> watchVisitsForStudentMonth({
@@ -183,22 +184,22 @@ class FollowUpService {
       return Stream<List<FollowUpModel>>.value(const []);
     }
 
-    return _firestore.collection(collection).snapshots().map((snapshot) {
-      final list =
-          snapshot.docs
+    // Server-side filtering — only matching documents are streamed.
+    // Requires a composite Firestore index on: studentId, stage_norm, month, year, visitDate.
+    return _firestore
+        .collection(collection)
+        .where('studentId', isEqualTo: studentId)
+        .where('stage_norm', isEqualTo: normalized)
+        .where('month', isEqualTo: month)
+        .where('year', isEqualTo: year)
+        .orderBy('visitDate', descending: true)
+        .snapshots()
+        .map((snapshot) {
+          final list = snapshot.docs
               .map((doc) => FollowUpModel.fromMap(doc.data(), doc.id))
-              .where(
-                (item) =>
-                    item.studentId == studentId &&
-                    normalizeStage(item.stage) == normalized &&
-                    item.month == month &&
-                    item.year == year,
-              )
-              .toList()
-            ..sort((a, b) => b.visitDate.compareTo(a.visitDate));
-
-      return list;
-    });
+              .toList();
+          return list;
+        });
   }
 
   Stream<FollowUpModel?> watchLatestVisitForStudentMonth({

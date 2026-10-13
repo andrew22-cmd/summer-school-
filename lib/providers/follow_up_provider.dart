@@ -60,7 +60,8 @@ class FollowUpProvider extends ChangeNotifier {
     if (_currentStage == normalized &&
         _currentMonthStart == selectedMonthStart &&
         _studentsSub != null &&
-        _followUpsSub != null) {
+        _followUpsSub != null &&
+        _error == null) {
       debugPrint(
         '[FollowUpProvider] already listening for stage_norm="$normalized"',
       );

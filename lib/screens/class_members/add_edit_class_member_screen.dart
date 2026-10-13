@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:summerschool/constants/user_roles.dart';
 import 'package:summerschool/models/class_member_model.dart';
 import 'package:summerschool/providers/auth_provider.dart';
 import 'package:summerschool/providers/class_member_provider.dart';
@@ -87,11 +88,18 @@ class _AddEditClassMemberScreenState extends State<AddEditClassMemberScreen> {
       );
 
       if (widget.member == null) {
-        final created = await provider.addMember(data);
+        final created = await provider.addMember(
+          data,
+          requestedByRole: auth.user?.role ?? UserRole.manager,
+        );
         // if service returned an assigned id, use it
         if (created.id.isNotEmpty) data = created;
       } else {
-        await provider.updateMember(data.id, data.toMap());
+        await provider.updateMember(
+          data.id,
+          data.toMap(),
+          requestedByRole: auth.user?.role ?? UserRole.manager,
+        );
       }
 
       if (!mounted) return;

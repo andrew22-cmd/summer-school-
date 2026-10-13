@@ -1,3 +1,6 @@
 {
-    "cmake.sourceDirectory": "D:/Summer School/linux"
+    "cmake.sourceDirectory": "D:/Summer School/linux",
+    "csharp-dev-tools.solutionViewer.selectedWorkspaceSolutions": [
+        "build/windows/x64/summerschool.sln"
+    ]
 }

@@ -6,6 +6,7 @@ import 'package:summerschool/models/class_member_model.dart';
 import 'package:summerschool/providers/auth_provider.dart';
 import 'package:summerschool/providers/class_member_provider.dart';
 import 'package:summerschool/providers/points_provider.dart';
+import 'package:summerschool/core/localization/app_localizations.dart';
 
 enum PointsActionMode { add, remove }
 
@@ -54,7 +55,7 @@ class _AddPointsScreenState extends State<AddPointsScreen> {
     ),
     _AddReasonOption('gpo_competition', 'GPO Competition', null),
     _AddReasonOption('leader_of_day', 'Leader of the Day', 50),
-    _AddReasonOption('other', 'Other', null),
+    _AddReasonOption('other_reason', 'Other', null),
   ];
 
   _AddReasonOption? get _selectedAddReason {
@@ -66,7 +67,44 @@ class _AddPointsScreenState extends State<AddPointsScreen> {
     return null;
   }
 
-  bool get _isOtherReasonSelected => _selectedAddReasonKey == 'other';
+  bool get _isOtherReasonSelected => _selectedAddReasonKey == 'other_reason';
+
+  void _applySelectedReason(String value) {
+    final selected = _addReasonOptions.firstWhere(
+      (option) => option.key == value,
+      orElse: () => const _AddReasonOption('', '', null),
+    );
+
+    if (selected.key.isEmpty) return;
+
+    setState(() {
+      _selectedAddReasonKey = value;
+    });
+
+    if (selected.points != null) {
+      _pointsController.text = selected.points.toString();
+    }
+
+    if (selected.key != 'other_reason') {
+      _reasonController.text = context.tr(selected.key);
+    } else {
+      _reasonController.clear();
+    }
+  }
+
+  Future<void> _openReasonSelectionPage() async {
+    final selectedValue = await Navigator.of(context).push<String>(
+      MaterialPageRoute(
+        builder: (_) => _ReasonSelectionPage(
+          options: _addReasonOptions,
+          selectedKey: _selectedAddReasonKey,
+        ),
+      ),
+    );
+
+    if (selectedValue == null || !mounted) return;
+    _applySelectedReason(selectedValue);
+  }
 
   @override
   void initState() {
@@ -126,7 +164,7 @@ class _AddPointsScreenState extends State<AddPointsScreen> {
       }
 
       if (!_isOtherReasonSelected) {
-        reason = selectedReason.label;
+        reason = context.tr(selectedReason.key);
         _reasonController.text = reason;
       } else {
         reason = _reasonController.text.trim();
@@ -378,40 +416,64 @@ class _AddPointsScreenState extends State<AddPointsScreen> {
                         ),
                         const SizedBox(height: 12),
                         if (_selectedMode == PointsActionMode.add)
-                          DropdownMenu<String>(
-                            width: double.infinity,
-                            enableFilter: true,
-                            requestFocusOnTap: true,
-                            label: const Text('Select add reason *'),
-                            initialSelection: _selectedAddReasonKey,
-                            dropdownMenuEntries: _addReasonOptions
-                                .map(
-                                  (option) => DropdownMenuEntry<String>(
-                                    value: option.key,
-                                    label: option.points == null
-                                        ? option.label
-                                        : '${option.label} — ${option.points}',
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: Material(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(14),
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(14),
+                                onTap: _openReasonSelectionPage,
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 14,
                                   ),
-                                )
-                                .toList(),
-                            onSelected: (value) {
-                              if (value == null) return;
-                              setState(() => _selectedAddReasonKey = value);
-                              final selected = _selectedAddReason;
-                              if (selected == null) return;
-                              if (selected.points != null) {
-                                _pointsController.text = selected.points!
-                                    .toString();
-                              }
-                              if (selected.key != 'other') {
-                                _reasonController.text = selected.label;
-                              } else {
-                                _reasonController.clear();
-                              }
-                            },
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              'Select add reason *',
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .labelLarge
+                                                  ?.copyWith(
+                                                    color: AppColors.primary,
+                                                    fontWeight: FontWeight.w700,
+                                                  ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              _selectedAddReason == null
+                                                  ? 'Tap to choose a reason'
+                                                  : context.tr(
+                                                      _selectedAddReason!.key,
+                                                    ),
+                                              style: TextStyle(
+                                                color:
+                                                    _selectedAddReason == null
+                                                    ? Colors.grey.shade600
+                                                    : Colors.black87,
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const Icon(
+                                        Icons.arrow_forward_ios_rounded,
+                                        size: 18,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
                           ),
-                        if (_selectedMode == PointsActionMode.add)
-                          const SizedBox(height: 12),
                         TextFormField(
                           controller: _pointsController,
                           keyboardType: TextInputType.number,
@@ -471,7 +533,7 @@ class _AddPointsScreenState extends State<AddPointsScreen> {
                               borderRadius: BorderRadius.circular(14),
                             ),
                             child: Text(
-                              'Reason: ${_selectedAddReason?.label ?? '-'}',
+                              '${context.tr('reason')}: ${_selectedAddReason != null ? context.tr(_selectedAddReason!.key) : '-'}',
                               style: const TextStyle(
                                 fontWeight: FontWeight.w600,
                               ),
@@ -503,6 +565,59 @@ class _AddPointsScreenState extends State<AddPointsScreen> {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ReasonSelectionPage extends StatelessWidget {
+  const _ReasonSelectionPage({
+    required this.options,
+    required this.selectedKey,
+  });
+
+  final List<_AddReasonOption> options;
+  final String? selectedKey;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Select add reason'),
+        backgroundColor: Colors.white,
+        foregroundColor: AppColors.primary,
+      ),
+      body: SafeArea(
+        child: ListView.separated(
+          padding: const EdgeInsets.all(16),
+          itemCount: options.length,
+          separatorBuilder: (_, __) => const Divider(height: 1),
+          itemBuilder: (_, index) {
+            final option = options[index];
+            final isSelected = option.key == selectedKey;
+            final title = option.points == null
+                ? context.tr(option.key)
+                : '${context.tr(option.key)} — ${option.points}';
+
+            return ListTile(
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 6,
+              ),
+              title: Text(
+                title,
+                style: TextStyle(
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  color: isSelected ? AppColors.primary : Colors.black87,
+                ),
+              ),
+              trailing: isSelected
+                  ? const Icon(Icons.check_circle, color: AppColors.primary)
+                  : const Icon(Icons.radio_button_unchecked),
+              onTap: () => Navigator.of(context).pop(option.key),
+            );
+          },
         ),
       ),
     );

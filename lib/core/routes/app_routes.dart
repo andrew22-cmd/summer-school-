@@ -5,6 +5,7 @@ import 'package:summerschool/screens/auth/login_screen.dart';
 import 'package:summerschool/screens/admin/admin_dashboard_screen.dart';
 import 'package:summerschool/screens/admin/admin_class_members_screen.dart';
 import 'package:summerschool/screens/admin/admin_login_screen.dart';
+import 'package:summerschool/screens/admin/manage_schedule_subjects_screen.dart';
 import 'package:summerschool/screens/points/points_screen.dart';
 import 'package:summerschool/providers/points_provider.dart';
 import 'package:summerschool/services/points_service.dart';
@@ -73,6 +74,7 @@ class AppRoutes {
   static const String adminLogin = '/admin-login';
   static const String adminDashboard = '/admin-dashboard';
   static const String adminClassMembers = '/admin-class-members';
+  static const String manageScheduleSubjects = '/manage-schedule-subjects';
   static const String sendNotification = '/send-notification';
   static const String notificationCenter = '/notification-center';
   static const String debugFcm = '/debug-fcm';
@@ -119,6 +121,7 @@ class AppRoutes {
     membersNotebookSelection: (_) => const MembersNotebookSelectionScreen(),
     adminLogin: (_) => const AdminLoginScreen(),
     adminClassMembers: (_) => const AdminClassMembersScreen(),
+    manageScheduleSubjects: (_) => const ManageScheduleSubjectsScreen(),
     adminDashboard: (context) => ChangeNotifierProvider<AdminUsersProvider>(
       create: (_) =>
           AdminUsersProvider(context.read<FirestoreUserService>())

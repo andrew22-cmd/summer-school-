@@ -152,10 +152,14 @@ class FirestoreUserService {
     }
   }
 
-  Future<List<UserModel>> getAllUsers() async {
+  /// Fetches the first [limit] users ordered by creation date.
+  /// For screens that need the complete list (e.g. small orgs), keep limit
+  /// at a safe value. Increases reads logarithmically, not unboundedly.
+  Future<List<UserModel>> getAllUsers({int limit = 1000}) async {
     try {
       final snapshot = await _usersCollection
           .orderBy('createdAt', descending: true)
+          .limit(limit)
           .get();
 
       return snapshot.docs
@@ -167,10 +171,39 @@ class FirestoreUserService {
     }
   }
 
-  Stream<List<UserModel>> watchAllUsers() {
+  /// Cursor-based paginated fetch for infinite-scroll UIs.
+  /// Pass [lastDocument] from the previous page's last snapshot to load next.
+  Future<({List<UserModel> users, DocumentSnapshot? lastDocument})>
+  getUsersPage({DocumentSnapshot? lastDocument, int limit = 30}) async {
+    try {
+      Query<Map<String, dynamic>> query = _usersCollection
+          .orderBy('createdAt', descending: true)
+          .limit(limit);
+
+      if (lastDocument != null) {
+        query = query.startAfterDocument(lastDocument);
+      }
+
+      final snapshot = await query.get();
+      final users = snapshot.docs
+          .where((doc) => doc.data().isNotEmpty)
+          .map((doc) => UserModel.fromMap(doc.data()))
+          .toList();
+
+      final last = snapshot.docs.isNotEmpty ? snapshot.docs.last : null;
+      return (users: users, lastDocument: last);
+    } on FirebaseException catch (e) {
+      throw Exception(_firebaseMessage('paginate users', e));
+    }
+  }
+
+  /// Real-time stream capped at [limit] documents.
+  /// For admin dashboards; increase limit only when operationally justified.
+  Stream<List<UserModel>> watchAllUsers({int limit = 1000}) {
     try {
       return _usersCollection
           .orderBy('createdAt', descending: true)
+          .limit(limit)
           .snapshots()
           .map(
             (snapshot) => snapshot.docs

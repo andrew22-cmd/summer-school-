@@ -4,6 +4,7 @@ import 'package:summerschool/screens/attendance/attendance_screen.dart';
 import 'package:summerschool/screens/follow_up/follow_up_students_screen.dart';
 import 'package:summerschool/screens/manager/manager_points_leaderboard_screen.dart';
 import 'package:summerschool/screens/schedule/schedule_screen.dart';
+import 'package:summerschool/core/localization/app_localizations.dart';
 
 class ManagerClassDetailsScreen extends StatelessWidget {
   const ManagerClassDetailsScreen({super.key, required this.selectedStage});
@@ -14,8 +15,8 @@ class ManagerClassDetailsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final items = <_FeatureItem>[
       _FeatureItem(
-        title: 'Attendance',
-        subtitle: 'View class attendance (read only)',
+        title: context.tr('Attendance'),
+        subtitle: context.tr('view_class_attendance_read_only'),
         icon: Icons.fact_check_rounded,
         onTap: () {
           debugPrint(
@@ -31,8 +32,8 @@ class ManagerClassDetailsScreen extends StatelessWidget {
         },
       ),
       _FeatureItem(
-        title: 'Visits',
-        subtitle: 'View weekly visits (read only)',
+        title: context.tr('Visits'),
+        subtitle: context.tr('view_weekly_visits_read_only'),
         icon: Icons.volunteer_activism_rounded,
         onTap: () {
           debugPrint(
@@ -50,8 +51,8 @@ class ManagerClassDetailsScreen extends StatelessWidget {
         },
       ),
       _FeatureItem(
-        title: 'Weekly Stage Schedule',
-        subtitle: 'View weekly schedule for this class',
+        title: context.tr('weekly_stage_schedule'),
+        subtitle: context.tr('view_weekly_schedule_class'),
         icon: Icons.calendar_month_rounded,
         onTap: () {
           debugPrint(
@@ -67,8 +68,8 @@ class ManagerClassDetailsScreen extends StatelessWidget {
         },
       ),
       _FeatureItem(
-        title: 'Youth Points',
-        subtitle: 'View leaderboard (name + total points)',
+        title: context.tr('youth_points'),
+        subtitle: context.tr('view_leaderboard'),
         icon: Icons.emoji_events_rounded,
         onTap: () {
           debugPrint(
@@ -90,7 +91,7 @@ class ManagerClassDetailsScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.white,
         foregroundColor: AppColors.primary,
-        title: const Text('Class Monitoring'),
+        title: Text(context.tr('class_monitoring')),
       ),
       body: SafeArea(
         child: LayoutBuilder(
@@ -118,7 +119,7 @@ class ManagerClassDetailsScreen extends StatelessWidget {
                       ),
                     ),
                     child: Text(
-                      'You are viewing class: $selectedStage',
+                      '${context.tr("you_are_viewing_class")}$selectedStage',
                       textDirection: TextDirection.ltr,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w800,
@@ -127,7 +128,7 @@ class ManagerClassDetailsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 14),
                   Text(
-                    'Read only mode: editing is disabled for manager in this section.',
+                    context.tr('read_only_manager_mode'),
                     style: TextStyle(
                       color: Colors.grey.shade700,
                       fontWeight: FontWeight.w600,

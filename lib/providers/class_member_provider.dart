@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:summerschool/constants/user_roles.dart';
 import 'package:summerschool/models/class_member_model.dart';
 import 'package:summerschool/services/class_member_service.dart';
 import 'package:summerschool/services/points_service.dart';
@@ -228,7 +229,13 @@ class ClassMemberProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<ClassMemberModel> addMember(ClassMemberModel member) async {
+  Future<ClassMemberModel> addMember(
+    ClassMemberModel member, {
+    UserRole? requestedByRole,
+  }) async {
+    if (requestedByRole == UserRole.memberManager) {
+      throw Exception('Member managers cannot add students.');
+    }
     return await _service.addMember(member);
   }
 
@@ -241,11 +248,21 @@ class ClassMemberProvider extends ChangeNotifier {
     return count;
   }
 
-  Future<void> updateMember(String id, Map<String, dynamic> updates) async {
+  Future<void> updateMember(
+    String id,
+    Map<String, dynamic> updates, {
+    UserRole? requestedByRole,
+  }) async {
+    if (requestedByRole == UserRole.memberManager) {
+      throw Exception('Member managers cannot edit students.');
+    }
     await _service.updateMember(id, updates);
   }
 
-  Future<void> deleteMember(String id) async {
+  Future<void> deleteMember(String id, {UserRole? requestedByRole}) async {
+    if (requestedByRole == UserRole.memberManager) {
+      throw Exception('Member managers cannot delete students.');
+    }
     await _service.deleteMember(id);
   }
 

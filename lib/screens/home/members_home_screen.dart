@@ -4,6 +4,8 @@ import 'package:summerschool/core/routes/app_routes.dart';
 import 'package:summerschool/providers/auth_provider.dart';
 import 'package:summerschool/widgets/common/notification_popup.dart';
 import 'package:summerschool/services/notification_service.dart';
+import 'package:summerschool/providers/locale_provider.dart';
+import 'package:summerschool/core/localization/app_localizations.dart';
 
 class MembersHomeScreen extends StatelessWidget {
   const MembersHomeScreen({super.key});
@@ -15,7 +17,7 @@ class MembersHomeScreen extends StatelessWidget {
     _MenuItem('Schedule', Icons.calendar_month_rounded),
     _MenuItem('Attendance', Icons.fact_check_rounded),
     _MenuItem('My Tasks', Icons.task_alt_rounded),
-    _MenuItem('Points', Icons.emoji_events_rounded),
+    _MenuItem('Taweyat', Icons.emoji_events_rounded),
   ];
 
   // SECONDARY: Info & Schedule
@@ -24,7 +26,7 @@ class MembersHomeScreen extends StatelessWidget {
     _MenuItem('Events', Icons.event_rounded),
     _MenuItem('Class', Icons.class_rounded),
     _MenuItem('Attachments', Icons.attach_file_rounded),
-    _MenuItem('Notes', Icons.sticky_note_2_rounded),
+    _MenuItem('Spiritual Notes', Icons.sticky_note_2_rounded),
   ];
 
   @override
@@ -42,22 +44,78 @@ class MembersHomeScreen extends StatelessWidget {
       appBar: AppBar(
         title: const SizedBox.shrink(), // Remove "Members Home" title
         actions: [
-          // Profile icon action button
-          IconButton(
-            tooltip: 'Profile',
-            icon: const Icon(Icons.person_rounded),
-            onPressed: () {
-              Navigator.pushNamed(context, AppRoutes.profile);
-            },
-          ),
-          if (userId != null)
-            StreamBuilder<int>(
-              stream: _notificationService.watchUnreadCount(userId),
-              builder: (context, snapshot) {
-                final unread = snapshot.data ?? 0;
-                return _NotificationBellDropdown(unread: unread);
-              },
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Row(
+              children: [
+                PopupMenuButton<String>(
+                  tooltip: context.tr('select_lang'),
+                  onSelected: (value) async {
+                    final localeProv = context.read<LocaleProvider>();
+                    if (value == 'en') {
+                      await localeProv.setLocale(const Locale('en'));
+                    } else if (value == 'ar') {
+                      await localeProv.setLocale(const Locale('ar'));
+                    }
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 6,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.language_rounded, size: 28),
+                        const SizedBox(width: 8),
+                        Text(
+                          context.tr('select_lang'),
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                  ),
+                  itemBuilder: (context) => const [
+                    PopupMenuItem(value: 'en', child: Text('English 🇬🇧')),
+                    PopupMenuItem(value: 'ar', child: Text('العربية 🇪🇬')),
+                  ],
+                ),
+                const SizedBox(width: 16),
+                InkWell(
+                  borderRadius: BorderRadius.circular(8),
+                  onTap: () {
+                    Navigator.pushNamed(context, AppRoutes.profile);
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 6,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.person_rounded, size: 28),
+                        const SizedBox(width: 8),
+                        Text(
+                          context.tr('profile'),
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                if (userId != null)
+                  StreamBuilder<int>(
+                    stream: _notificationService.watchUnreadCount(userId),
+                    builder: (context, snapshot) {
+                      final unread = snapshot.data ?? 0;
+                      return _NotificationBellDropdown(unread: unread);
+                    },
+                  ),
+              ],
             ),
+          ),
         ],
       ),
       body: SafeArea(
@@ -67,46 +125,19 @@ class MembersHomeScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Welcome, $welcomeName',
+                context.tr('welcome_name').replaceAll('{name}', welcomeName),
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w800,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
-                isMemberManager
-                    ? 'Member Manager access enabled.'
-                    : 'Have a blessed and productive day.',
+                context.tr('blessed_day'),
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
-              if (isMemberManager) ...[
-                const SizedBox(height: 10),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.manage_accounts_rounded,
-                        size: 18,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      const SizedBox(width: 8),
-                      const Text('Extra permissions are active'),
-                    ],
-                  ),
-                ),
-              ],
               const SizedBox(height: 24),
               Text(
-                'Top Priorities',
+                context.tr('top_priorities'),
                 style: Theme.of(
                   context,
                 ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
@@ -115,7 +146,7 @@ class MembersHomeScreen extends StatelessWidget {
               _buildGridSection(_topPriorityItems),
               const SizedBox(height: 28),
               Text(
-                'Info & Schedule',
+                context.tr('info_schedule'),
                 style: Theme.of(
                   context,
                 ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
@@ -136,7 +167,7 @@ class MembersHomeScreen extends StatelessWidget {
                     );
                   },
                   icon: const Icon(Icons.logout_rounded),
-                  label: const Text('Logout'),
+                  label: Text(context.tr('logout')),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.red.shade700,
                     side: BorderSide(color: Colors.red.shade300),
@@ -200,7 +231,7 @@ class _MenuCard extends StatelessWidget {
             Navigator.pushNamed(context, AppRoutes.events);
             return;
           }
-          if (item.title == 'Notes') {
+          if (item.title == 'Spiritual Notes') {
             Navigator.pushNamed(context, AppRoutes.spiritualNotebook);
             return;
           }
@@ -208,7 +239,7 @@ class _MenuCard extends StatelessWidget {
             Navigator.pushNamed(context, AppRoutes.classMembers);
             return;
           }
-          if (item.title == 'Points') {
+          if (item.title == 'Taweyat') {
             Navigator.pushNamed(context, AppRoutes.points);
             return;
           }
@@ -264,7 +295,7 @@ class _MenuCard extends StatelessWidget {
               ),
               const SizedBox(height: 14),
               Text(
-                item.title,
+                context.tr(item.title),
                 textAlign: TextAlign.center,
                 style: Theme.of(
                   context,
@@ -308,10 +339,23 @@ class _NotificationBellDropdown extends StatelessWidget {
           ),
         ),
       ],
-      child: Badge(
-        isLabelVisible: unread > 0,
-        label: Text('$unread'),
-        child: const Icon(Icons.notifications_rounded, size: 24),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Badge(
+              isLabelVisible: unread > 0,
+              label: Text('$unread'),
+              child: const Icon(Icons.notifications_rounded, size: 28),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              context.tr('notifications'),
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
       ),
     );
   }

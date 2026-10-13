@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:summerschool/core/constants/app_colors.dart';
 import 'package:summerschool/core/routes/app_routes.dart';
@@ -8,6 +9,7 @@ import 'package:summerschool/providers/servants_attendance_provider.dart';
 import 'package:summerschool/screens/attendance/servants_attendance_screen.dart';
 import 'package:summerschool/services/pdf_service.dart';
 import 'package:summerschool/services/servants_attendance_service.dart';
+import 'package:summerschool/core/localization/app_localizations.dart';
 
 class AttendanceScreen extends StatefulWidget {
   const AttendanceScreen({
@@ -36,13 +38,18 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   }) async {
     if (_isExportingPdf) return;
 
+    final now = DateTime.now();
+    final String currentDayName = DateFormat('EEEE').format(now);
+    final String currentDateStr = DateFormat('dd-MM-yyyy').format(now);
+
+    // ── Build data rows (fully Arabic labels) ────────────────────────────
     final messenger = ScaffoldMessenger.of(context);
     final rows = attendance.students
         .map(
           (student) => [
             student.name,
-            attendance.isPresent(student.id) ? 'Present' : 'Absent',
-            attendance.formattedSelectedDate,
+            attendance.isPresent(student.id) ? 'حاضر' : 'غائب',
+            currentDateStr,
             stage,
           ],
         )
@@ -50,27 +57,26 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
     if (rows.isEmpty) {
       messenger.showSnackBar(
-        const SnackBar(content: Text('No attendance data available to export.')),
+        const SnackBar(content: Text('لا توجد بيانات حضور للتصدير.')),
       );
       return;
     }
 
     setState(() => _isExportingPdf = true);
     try {
-      await _pdfService.generateAndShareTablePdf(
-        title: 'Attendance - $stage',
-        headers: const ['Student', 'Status', 'Date', 'Stage'],
+      await _pdfService.generateAndShareAttendancePdf(
+        arabicDayName: currentDayName,
+        arabicDateStr: currentDateStr,
+        headers: const ['الاسم', 'الحالة', 'التاريخ', 'المرحلة'],
         data: rows,
       );
       if (!mounted) return;
       messenger.showSnackBar(
-        const SnackBar(content: Text('Attendance PDF ready to share.')),
+        const SnackBar(content: Text('تم تجهيز تقرير الحضور بنجاح.')),
       );
     } catch (e) {
       if (!mounted) return;
-      messenger.showSnackBar(
-        SnackBar(content: Text('Failed to export attendance PDF: $e')),
-      );
+      messenger.showSnackBar(SnackBar(content: Text('فشل تصدير التقرير: $e')));
     } finally {
       if (mounted) setState(() => _isExportingPdf = false);
     }
@@ -141,14 +147,35 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         foregroundColor: AppColors.primary,
-        title: Text(readOnly ? 'Attendance (Read Only)' : 'Attendance'),
+        title: Text(
+          readOnly
+              ? '${context.tr('attendance')} (${context.tr('read_only')})'
+              : context.tr('attendance'),
+        ),
         actions: [
-          TextButton.icon(
-            onPressed: () {
-              Navigator.pushNamed(context, AppRoutes.servantsAttendance);
-            },
-            icon: const Icon(Icons.assignment_turned_in_rounded),
-            label: const Text('Servants Attendance'),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: FilledButton.icon(
+              onPressed: () {
+                Navigator.pushNamed(context, AppRoutes.servantsAttendance);
+              },
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              icon: const Icon(Icons.assignment_turned_in_rounded, size: 18),
+              label: Text(
+                context.tr('servants_attendance'),
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+            ),
           ),
           const SizedBox(width: 4),
           if (!readOnly) ...[
@@ -157,7 +184,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   ? null
                   : attendance.enableEditMode,
               icon: const Icon(Icons.edit_rounded),
-              label: const Text('EDIT'),
+              label: Text(context.tr('edit')),
             ),
             const SizedBox(width: 4),
             TextButton.icon(
@@ -176,6 +203,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                             content: Text('Attendance saved successfully.'),
                           ),
                         );
+                        if (context.mounted) {
+                          Navigator.of(context).pop(true);
+                        }
                       } catch (e) {
                         if (!context.mounted) return;
                         messenger.showSnackBar(
@@ -191,28 +221,13 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(Icons.save_rounded),
-              label: const Text('SAVE'),
+              label: Text(context.tr('save')),
             ),
             const SizedBox(width: 8),
           ],
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _isExportingPdf
-            ? null
-            : () => _exportAndShareAttendancePdf(
-                stage: effectiveStage,
-                attendance: attendance,
-              ),
-        icon: _isExportingPdf
-            ? const SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            : const Icon(Icons.picture_as_pdf_rounded),
-        label: Text(_isExportingPdf ? 'Exporting...' : 'Export & Share'),
-      ),
+
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -236,7 +251,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                         onChanged: attendance.setSearch,
                         decoration: InputDecoration(
                           prefixIcon: const Icon(Icons.search_rounded),
-                          hintText: 'Search by student name',
+                          hintText: context.tr('search'),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -272,7 +287,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                                   Expanded(
                                     child: ListView.separated(
                                       itemCount: students.length,
-                                      separatorBuilder: (_, __) =>
+                                      separatorBuilder: (_, _) =>
                                           const SizedBox(height: 10),
                                       itemBuilder: (context, index) {
                                         final student = students[index];
@@ -294,6 +309,59 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                               ),
                             ),
                           ),
+                  ),
+                  // ── Permanent Export & Share button ──────────────────────
+                  Container(
+                    margin: const EdgeInsets.only(top: 12),
+                    padding: const EdgeInsets.all(16.0),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceSoft,
+                      border: Border(
+                        top: BorderSide(color: Colors.grey.shade200),
+                      ),
+                    ),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        onPressed: _isExportingPdf
+                            ? null
+                            : () => _exportAndShareAttendancePdf(
+                                stage: effectiveStage,
+                                attendance: attendance,
+                              ),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          disabledBackgroundColor: AppColors.primary.withValues(
+                            alpha: 0.5,
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        icon: _isExportingPdf
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(
+                                Icons.picture_as_pdf_rounded,
+                                color: Colors.white,
+                              ),
+                        label: Text(
+                          _isExportingPdf ? '...' : context.tr('export_share'),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -319,10 +387,13 @@ class _DateHeader extends StatelessWidget {
         side: BorderSide(color: Colors.grey.shade300),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         child: Row(
           children: [
             IconButton(
+              constraints: const BoxConstraints.tightFor(width: 34, height: 34),
+              padding: EdgeInsets.zero,
+              visualDensity: VisualDensity.compact,
               onPressed: attendance.previousDay,
               icon: const Icon(Icons.chevron_left_rounded),
             ),
@@ -330,17 +401,18 @@ class _DateHeader extends StatelessWidget {
               child: Column(
                 children: [
                   Text(
-                    '${attendance.selectedEnglishDayName}',
+                    context.tr(attendance.selectedEnglishDayName),
                     style: const TextStyle(
                       fontWeight: FontWeight.w800,
-                      fontSize: 18,
+                      fontSize: 16,
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
                   Text(
                     attendance.formattedSelectedDate,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontSize: 15,
                       color: Colors.grey.shade700,
                     ),
                   ),
@@ -348,6 +420,9 @@ class _DateHeader extends StatelessWidget {
               ),
             ),
             IconButton(
+              constraints: const BoxConstraints.tightFor(width: 34, height: 34),
+              padding: EdgeInsets.zero,
+              visualDensity: VisualDensity.compact,
               onPressed: attendance.nextDay,
               icon: const Icon(Icons.chevron_right_rounded),
             ),
@@ -369,19 +444,22 @@ class _AttendanceHeaderRow extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: AppColors.primary.withOpacity(0.08),
+        color: AppColors.primary.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
         children: [
-          const Expanded(
+          Expanded(
             flex: 5,
-            child: Text('Name', style: TextStyle(fontWeight: FontWeight.w800)),
+            child: Text(
+              context.tr('name'),
+              style: const TextStyle(fontWeight: FontWeight.w800),
+            ),
           ),
           Expanded(
             flex: 2,
             child: Text(
-              'Status',
+              context.tr('status'),
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontWeight: FontWeight.w800,
@@ -440,8 +518,8 @@ class _AttendanceRow extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     color: present
-                        ? Colors.green.withOpacity(0.1)
-                        : Colors.grey.withOpacity(0.08),
+                        ? Colors.green.withValues(alpha: 0.1)
+                        : Colors.grey.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Checkbox(
@@ -481,7 +559,7 @@ class _EmptyAttendanceState extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 28,
-                backgroundColor: AppColors.primary.withOpacity(0.1),
+                backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                 child: const Icon(
                   Icons.fact_check_rounded,
                   color: AppColors.primary,
@@ -489,11 +567,10 @@ class _EmptyAttendanceState extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                'No students found for $stage',
+                '${context.tr('no_students')} - $stage',
                 style: const TextStyle(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 4),
-              const Text('Attendance appears here for your current stage.'),
             ],
           ),
         ),

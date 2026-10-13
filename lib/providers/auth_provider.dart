@@ -144,12 +144,16 @@ class AuthProvider extends ChangeNotifier {
     final currentUser = _user;
     if (currentUser == null) return;
 
-    await _fcmService.subscribeToUserTopics(
-      currentUser.role.value,
-      currentUser.stage.isEmpty ? null : currentUser.stage,
-    );
+    try {
+      await _fcmService.subscribeToUserTopics(
+        currentUser.role.value,
+        currentUser.stage.isEmpty ? null : currentUser.stage,
+      );
 
-    await _fcmService.syncTokenWithUser(currentUser);
+      await _fcmService.syncTokenWithUser(currentUser);
+    } catch (error) {
+      debugPrint('[AuthProvider] Notification setup skipped: $error');
+    }
   }
 
   void _setLoading(bool value) {

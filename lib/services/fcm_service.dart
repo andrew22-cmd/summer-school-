@@ -48,15 +48,28 @@ class FcmService {
   Future<void> initialize() async {
     if (_initialized) return;
 
-    debugPrint('[FCM] Initializing...');
-    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+    if (kIsWeb) {
+      debugPrint('[FCM] Web build detected; skipping notification setup.');
+      _initialized = true;
+      return;
+    }
 
-    await _setupLocalNotifications();
-    await _requestPermission();
-    _registerListenersOnce();
+    try {
+      debugPrint('[FCM] Initializing...');
+      FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
-    _initialized = true;
-    debugPrint('[FCM] Initialized');
+      await _setupLocalNotifications();
+      await _requestPermission();
+      _registerListenersOnce();
+
+      _initialized = true;
+      debugPrint('[FCM] Initialized');
+    } catch (error) {
+      _initialized = true;
+      debugPrint(
+        '[FCM] Initialization skipped because notifications are unavailable: $error',
+      );
+    }
   }
 
   Future<void> _setupLocalNotifications() async {
@@ -82,21 +95,48 @@ class FcmService {
   }
 
   Future<void> _requestPermission() async {
-    final settings = await _messaging.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-      provisional: false,
-    );
+    if (kIsWeb) {
+      debugPrint('[FCM] Web platform detected; skipping permission request.');
+      return;
+    }
 
-    _permissionStatus = settings.authorizationStatus.name;
-    debugPrint('[FCM] Permission status: ${settings.authorizationStatus.name}');
+    try {
+      final settings = await _messaging.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+        provisional: false,
+      );
 
-    await _messaging.setForegroundNotificationPresentationOptions(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
+      _permissionStatus = settings.authorizationStatus.name;
+      debugPrint(
+        '[FCM] Permission status: ${settings.authorizationStatus.name}',
+      );
+
+      await _messaging.setForegroundNotificationPresentationOptions(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+    } on FirebaseException catch (error) {
+      final message = error.message?.toLowerCase() ?? '';
+      if (kIsWeb ||
+          message.contains('permission') ||
+          message.contains('blocked')) {
+        debugPrint('[FCM] Permission request blocked/unsupported: $error');
+        return;
+      }
+      rethrow;
+    } catch (error) {
+      final message = error.toString().toLowerCase();
+      if (kIsWeb ||
+          message.contains('permission') ||
+          message.contains('blocked')) {
+        debugPrint('[FCM] Ignoring notification permission error: $error');
+        return;
+      }
+      rethrow;
+    }
   }
 
   void _registerListenersOnce() {
@@ -124,27 +164,54 @@ class FcmService {
   }
 
   Future<String?> getToken() async {
-    final token = await _messaging.getToken();
-    _currentToken = token;
-    debugPrint('[FCM] Current token: $token');
-    return token;
+    if (kIsWeb) {
+      debugPrint('[FCM] Web platform detected; skipping token retrieval.');
+      return null;
+    }
+
+    try {
+      final token = await _messaging.getToken();
+      _currentToken = token;
+      debugPrint('[FCM] Current token: $token');
+      return token;
+    } on FirebaseException catch (error) {
+      final message = error.message?.toLowerCase() ?? '';
+      if (message.contains('permission') || message.contains('blocked')) {
+        debugPrint('[FCM] Token retrieval blocked by permission: $error');
+        return null;
+      }
+      rethrow;
+    } catch (error) {
+      final message = error.toString().toLowerCase();
+      if (message.contains('permission') || message.contains('blocked')) {
+        debugPrint('[FCM] Ignoring FCM token error: $error');
+        return null;
+      }
+      rethrow;
+    }
   }
 
   Future<void> syncTokenWithUser(UserModel user) async {
     _currentUserId = user.id;
 
-    final token = await getToken();
-    if (token == null || token.isEmpty) {
-      debugPrint('[FCM] Token empty, not saving to Firestore');
-      return;
+    try {
+      final token = await getToken();
+      if (token == null || token.isEmpty) {
+        debugPrint('[FCM] Token empty, not saving to Firestore');
+        return;
+      }
+
+      await _firestore.collection('users').doc(user.id).set({
+        'fcmToken': token,
+        'fcmTokenUpdatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+
+      debugPrint('[FCM] Token saved to Firestore for uid=${user.id}');
+    } catch (error) {
+      debugPrint(
+        '[FCM] Skipping token sync because notifications are unavailable: $error',
+      );
     }
-
-    await _firestore.collection('users').doc(user.id).set({
-      'fcmToken': token,
-      'fcmTokenUpdatedAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
-
-    debugPrint('[FCM] Token saved to Firestore for uid=${user.id}');
   }
 
   Future<void> clearTokenForUser(String userId) async {
@@ -163,35 +230,35 @@ class FcmService {
     }
   }
 
- Future<void> subscribeToTopic(String topic) async {
-  if (kIsWeb) {
-    debugPrint('[FCM] Skipping topic subscription on Web');
-    return;
+  Future<void> subscribeToTopic(String topic) async {
+    if (kIsWeb) {
+      debugPrint('[FCM] Skipping topic subscription on Web');
+      return;
+    }
+
+    final sanitized = _sanitizeTopic(topic);
+    if (sanitized.isEmpty) return;
+
+    await _messaging.subscribeToTopic(sanitized);
+    _subscribedTopics.add(sanitized);
+
+    debugPrint('[FCM] Subscribed to topic: $sanitized');
   }
 
-  final sanitized = _sanitizeTopic(topic);
-  if (sanitized.isEmpty) return;
+  Future<void> unsubscribeFromTopic(String topic) async {
+    if (kIsWeb) {
+      debugPrint('[FCM] Skipping topic unsubscribe on Web');
+      return;
+    }
 
-  await _messaging.subscribeToTopic(sanitized);
-  _subscribedTopics.add(sanitized);
+    final sanitized = _sanitizeTopic(topic);
+    if (sanitized.isEmpty) return;
 
-  debugPrint('[FCM] Subscribed to topic: $sanitized');
-}
+    await _messaging.unsubscribeFromTopic(sanitized);
+    _subscribedTopics.remove(sanitized);
 
- Future<void> unsubscribeFromTopic(String topic) async {
-  if (kIsWeb) {
-    debugPrint('[FCM] Skipping topic unsubscribe on Web');
-    return;
+    debugPrint('[FCM] Unsubscribed from topic: $sanitized');
   }
-
-  final sanitized = _sanitizeTopic(topic);
-  if (sanitized.isEmpty) return;
-
-  await _messaging.unsubscribeFromTopic(sanitized);
-  _subscribedTopics.remove(sanitized);
-
-  debugPrint('[FCM] Unsubscribed from topic: $sanitized');
-}
 
   Future<void> subscribeToUserTopics(String role, String? stage) async {
     final topics = <String>{'all'};

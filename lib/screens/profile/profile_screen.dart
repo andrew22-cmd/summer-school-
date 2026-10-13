@@ -7,6 +7,7 @@ import 'package:summerschool/constants/user_roles.dart';
 import 'package:summerschool/providers/auth_provider.dart';
 import 'package:summerschool/services/firestore_user_service.dart';
 import 'package:summerschool/core/constants/app_colors.dart';
+import 'package:summerschool/core/localization/app_localizations.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -39,12 +40,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (user == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Profile')),
+        appBar: AppBar(title: Text(context.tr('profile'))),
         body: Center(
           child: ElevatedButton(
             onPressed: () =>
                 Navigator.pushReplacementNamed(context, AppRoutes.login),
-            child: const Text('Sign in'),
+            child: Text(context.tr('sign_in')),
           ),
         ),
       );
@@ -63,9 +64,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           icon: const Icon(Icons.arrow_back_ios_new),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text(
-          'Profile',
-          style: TextStyle(fontWeight: FontWeight.w600),
+        title: Text(
+          context.tr('profile'),
+          style: const TextStyle(fontWeight: FontWeight.w600),
         ),
         actions: [
           TextButton.icon(
@@ -73,9 +74,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               await _handleLogout(context);
             },
             icon: Icon(Icons.logout, color: AppColors.primary),
-            label: const Text(
-              'Logout',
-              style: TextStyle(color: AppColors.primary),
+            label: Text(
+              context.tr('logout'),
+              style: const TextStyle(color: AppColors.primary),
             ),
           ),
         ],
@@ -92,20 +93,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 key: _formKey,
                 child: Column(
                   children: [
-                    _buildReadOnlyField(label: 'Email', value: user.email),
+                    _buildReadOnlyField(label: context.tr('email'), value: user.email),
                     const SizedBox(height: 12),
-                    _buildReadOnlyField(label: 'Name', value: user.name),
+                    _buildReadOnlyField(label: context.tr('name'), value: user.name),
                     const SizedBox(height: 12),
-                    _buildEditablePhoneField(),
+                    _buildEditablePhoneField(context),
                     const SizedBox(height: 12),
-                    _buildReadOnlyField(label: 'Role', value: user.role.value),
+                    _buildReadOnlyField(label: context.tr('role'), value: user.role.value),
                     const SizedBox(height: 12),
-                    _buildReadOnlyField(label: 'Stage', value: user.stage),
+                    _buildReadOnlyField(label: context.tr('stage'), value: user.stage),
                     const SizedBox(height: 12),
-                    _buildReadOnlyField(label: 'Class', value: user.className),
+                    _buildReadOnlyField(label: context.tr('class'), value: user.className),
                     const SizedBox(height: 12),
                     _buildReadOnlyField(
-                      label: 'Confession Father',
+                      label: context.tr('confession_father'),
                       value: user.confessionFather,
                     ),
                   ],
@@ -206,7 +207,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildEditablePhoneField() {
+  Widget _buildEditablePhoneField(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
@@ -219,15 +220,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: TextFormField(
               controller: _phoneController,
               keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(
-                labelText: 'Phone',
+              decoration: InputDecoration(
+                labelText: context.tr('phone'),
                 border: InputBorder.none,
                 isDense: true,
               ),
               validator: (v) {
                 if (v == null || v.trim().isEmpty)
-                  return 'Please enter a phone number.';
-                if (v.trim().length < 6) return 'Enter a valid phone number.';
+                  return context.tr('enter_phone');
+                if (v.trim().length < 6) return context.tr('valid_phone');
                 return null;
               },
             ),
@@ -254,9 +255,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               padding: const EdgeInsets.symmetric(vertical: 14),
             ),
             onPressed: _isSaving ? null : () => _handleLogout(context),
-            child: const Text(
-              'Logout',
-              style: TextStyle(color: AppColors.primary),
+            child: Text(
+              context.tr('logout'),
+              style: const TextStyle(color: AppColors.primary),
             ),
           ),
         ),
@@ -277,9 +278,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       strokeWidth: 2,
                     ),
                   )
-                : const Text(
-                    'Save',
-                    style: TextStyle(fontWeight: FontWeight.w600),
+                : Text(
+                    context.tr('save'),
+                    style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
           ),
         ),
@@ -303,7 +304,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Phone updated successfully')),
+          SnackBar(content: Text(context.tr('phone_updated'))),
         );
       }
     } catch (e) {
@@ -311,7 +312,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Failed to save: $message')));
+        ).showSnackBar(SnackBar(content: Text('${context.tr('failed_to_save')}$message')));
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);

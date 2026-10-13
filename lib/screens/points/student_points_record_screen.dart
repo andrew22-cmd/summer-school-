@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:summerschool/core/constants/app_colors.dart';
 import 'package:summerschool/models/class_member_model.dart';
 import 'package:summerschool/providers/auth_provider.dart';
 import 'package:summerschool/providers/points_provider.dart';
 import 'package:summerschool/services/pdf_service.dart';
+import 'package:summerschool/core/localization/app_localizations.dart';
 
 class StudentPointsRecordScreen extends StatefulWidget {
   const StudentPointsRecordScreen({super.key, this.student});
@@ -22,9 +24,7 @@ class _StudentPointsRecordScreenState extends State<StudentPointsRecordScreen> {
   final PdfService _pdfService = const PdfService();
 
   String _formatDate(DateTime dt) {
-    final local = dt.toLocal();
-    String two(int v) => v.toString().padLeft(2, '0');
-    return '${local.year}/${two(local.month)}/${two(local.day)}';
+    return DateFormat('dd-MM-yyyy').format(dt.toLocal());
   }
 
   Future<void> _exportAndSharePointsPdf({
@@ -34,56 +34,55 @@ class _StudentPointsRecordScreenState extends State<StudentPointsRecordScreen> {
     if (_isExportingPdf) return;
 
     final messenger = ScaffoldMessenger.of(context);
+
+    // ── Resolve student identity ───────────────────────────────────────
+    final student = widget.student;
+    final studentName = student?.name ??
+        (provider.history.isNotEmpty ? provider.history.first.studentName : stage);
+    final studentCode = student?.id ?? stage;
+    // Live balance: prefer the provider-tracked total, fall back to model field.
+    final int currentPoints = student != null
+        ? (provider.currentTotalForStudent(student.id) ?? student.totalPoints)
+        : 0;
+
+    // ── Build 4-column Arabic rows ────────────────────────────────────
+    // Columns: ['التاريخ', 'النقاط', 'السبب / البيان', 'بواسطة']
     final rows = provider.history
         .map(
           (item) => [
             _formatDate(item.createdAt),
-            item.studentName,
-            item.isAdd ? 'Add' : 'Remove',
             '${item.isAdd ? '+' : '-'}${item.points}',
             item.reason,
             item.createdByName,
-            '${item.totalPointsBefore}',
-            '${item.totalPointsAfter}',
-            stage,
           ],
         )
         .toList();
 
     if (rows.isEmpty) {
       messenger.showSnackBar(
-        const SnackBar(content: Text('No points history available to export.')),
+        const SnackBar(
+          content: Text('لا توجد بيانات نقاط للتصدير.'),
+        ),
       );
       return;
     }
 
     setState(() => _isExportingPdf = true);
     try {
-      await _pdfService.generateAndShareTablePdf(
-        title: widget.student == null
-            ? 'Student Points History - $stage'
-            : '${widget.student!.name} Points History',
-        headers: const [
-          'Date',
-          'Student',
-          'Action',
-          'Points',
-          'Reason',
-          'Added By',
-          'Before',
-          'After',
-          'Stage',
-        ],
+      await _pdfService.generateAndSharePointsPdf(
+        studentName: studentName,
+        studentCode: studentCode,
+        currentPoints: currentPoints,
         data: rows,
       );
       if (!mounted) return;
       messenger.showSnackBar(
-        const SnackBar(content: Text('Points history PDF ready to share.')),
+        const SnackBar(content: Text('تم تجهيز تقرير النقاط بنجاح.')),
       );
     } catch (e) {
       if (!mounted) return;
       messenger.showSnackBar(
-        SnackBar(content: Text('Failed to export points PDF: $e')),
+        SnackBar(content: Text('فشل تصدير التقرير: $e')),
       );
     } finally {
       if (mounted) setState(() => _isExportingPdf = false);
@@ -132,8 +131,8 @@ class _StudentPointsRecordScreenState extends State<StudentPointsRecordScreen> {
         foregroundColor: AppColors.primary,
         title: Text(
           isSingleStudent
-              ? '${widget.student!.name} Points Record'
-              : 'Student Points Record System',
+              ? '${widget.student!.name} ${context.tr('points_record')}'
+              : context.tr('points_record'),
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -147,7 +146,7 @@ class _StudentPointsRecordScreenState extends State<StudentPointsRecordScreen> {
                 child: CircularProgressIndicator(strokeWidth: 2),
               )
             : const Icon(Icons.picture_as_pdf_rounded),
-        label: Text(_isExportingPdf ? 'Exporting...' : 'Export & Share'),
+        label: Text(_isExportingPdf ? context.tr('exporting') : context.tr('export_share')),
       ),
       body: SafeArea(
         child: Padding(
@@ -161,7 +160,7 @@ class _StudentPointsRecordScreenState extends State<StudentPointsRecordScreen> {
                   children: [
                     Expanded(
                       child: records.isEmpty
-                          ? const Center(child: Text('No point records yet.'))
+                          ? Center(child: Text(context.tr('no_point_records')))
                           : SingleChildScrollView(
                               child: SingleChildScrollView(
                                 scrollDirection: Axis.horizontal,
@@ -170,14 +169,14 @@ class _StudentPointsRecordScreenState extends State<StudentPointsRecordScreen> {
                                     AppColors.primary.withOpacity(0.08),
                                   ),
                                   columnSpacing: 24,
-                                  columns: const [
-                                    DataColumn(label: Text('Date')),
-                                    DataColumn(label: Text('Add/Remove')),
-                                    DataColumn(label: Text('Points')),
-                                    DataColumn(label: Text('Reason')),
-                                    DataColumn(label: Text('Added By')),
-                                    DataColumn(label: Text('Before')),
-                                    DataColumn(label: Text('After')),
+                                  columns: [
+                                    DataColumn(label: Text(context.tr('date'))),
+                                    DataColumn(label: Text(context.tr('add_remove'))),
+                                    DataColumn(label: Text(context.tr('points'))),
+                                    DataColumn(label: Text(context.tr('reason'))),
+                                    DataColumn(label: Text(context.tr('added_by'))),
+                                    DataColumn(label: Text(context.tr('before'))),
+                                    DataColumn(label: Text(context.tr('after'))),
                                   ],
                                   rows: records.map((item) {
                                     final isAdd = item.isAdd;
@@ -191,7 +190,7 @@ class _StudentPointsRecordScreenState extends State<StudentPointsRecordScreen> {
                                         ),
                                         DataCell(
                                           Text(
-                                            isAdd ? 'Add' : 'Remove',
+                                            context.tr(isAdd ? 'add' : 'remove'),
                                             style: TextStyle(
                                               color: color,
                                               fontWeight: FontWeight.w700,

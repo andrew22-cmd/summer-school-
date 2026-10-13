@@ -6,6 +6,7 @@ import 'package:summerschool/providers/auth_provider.dart';
 import 'package:summerschool/providers/spiritual_notebook_provider.dart';
 import 'package:summerschool/services/spiritual_notebook_service.dart';
 import 'package:summerschool/models/spiritual_notebook_model.dart';
+import 'package:summerschool/core/localization/app_localizations.dart';
 
 class SpiritualNotebookScreen extends StatefulWidget {
   const SpiritualNotebookScreen({super.key});
@@ -62,7 +63,7 @@ class _SpiritualNotebookScreenState extends State<SpiritualNotebookScreen> {
 
     if (user == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Spiritual Notebook')),
+        appBar: AppBar(title: Text(context.tr('spiritual_notebook'))),
         body: Center(
           child: ElevatedButton(
             onPressed: () =>
@@ -88,9 +89,9 @@ class _SpiritualNotebookScreenState extends State<SpiritualNotebookScreen> {
             appBar: AppBar(
               backgroundColor: Colors.white,
               foregroundColor: AppColors.primary,
-              title: const Text(
-                'Spiritual Notebook',
-                style: TextStyle(fontWeight: FontWeight.w600),
+              title: Text(
+                context.tr('spiritual_notebook'),
+                style: const TextStyle(fontWeight: FontWeight.w600),
               ),
             ),
             body: SafeArea(
@@ -131,14 +132,14 @@ class _SpiritualNotebookScreenState extends State<SpiritualNotebookScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'Week start: ${_formatDate(_parseWeekStart(notebook?.weekStartDate ?? _weekStartForDate(DateTime.now())))}',
+                                      '${context.tr("week_start")}${_formatDate(_parseWeekStart(notebook?.weekStartDate ?? _weekStartForDate(DateTime.now())))}',
                                       style: const TextStyle(
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      'Day: ${todayName ?? ''}',
+                                      '${context.tr("day_label")}${todayName != null ? context.tr(todayName) : ''}',
                                       style: const TextStyle(
                                         color: Colors.black54,
                                       ),
@@ -211,7 +212,7 @@ class _SpiritualNotebookScreenState extends State<SpiritualNotebookScreen> {
                               AppRoutes.membersNotebookSelection,
                             ),
                             icon: const Icon(Icons.groups_rounded),
-                            label: const Text('View Members Notebooks'),
+                            label: Text(context.tr('view_members_notebooks')),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primary,
                               foregroundColor: Colors.white,
@@ -260,6 +261,8 @@ class _SpiritualNotebookScreenState extends State<SpiritualNotebookScreen> {
     String userId,
     SpiritualNotebookProvider provider,
   ) {
+    final now = DateTime.now();
+    final todayKey = days[now.weekday % 7]['key'];
     final weekStart = _weekStartFrom(notebook.weekStartDate);
 
     return SingleChildScrollView(
@@ -283,8 +286,8 @@ class _SpiritualNotebookScreenState extends State<SpiritualNotebookScreen> {
                   SizedBox(
                     width: 140,
                     child: Text(
-                      'Day',
-                      style: TextStyle(fontWeight: FontWeight.w600),
+                      context.tr('day'),
+                      style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
                   ),
                   for (final col in columns)
@@ -292,7 +295,7 @@ class _SpiritualNotebookScreenState extends State<SpiritualNotebookScreen> {
                       width: 80,
                       alignment: Alignment.center,
                       child: Text(
-                        col['label']!,
+                        context.tr(col['label']!),
                         style: const TextStyle(fontWeight: FontWeight.w600),
                       ),
                     ),
@@ -324,9 +327,10 @@ class _SpiritualNotebookScreenState extends State<SpiritualNotebookScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                '${day['label']} - ${_formatDate(date)}',
+                                '${context.tr(day['label']!)} - ${_formatDate(date)}',
                                 style: const TextStyle(
                                   fontWeight: FontWeight.w600,
+                                  color: Colors.black87,
                                 ),
                               ),
                             ],

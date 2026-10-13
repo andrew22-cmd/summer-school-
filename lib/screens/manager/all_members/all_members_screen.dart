@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:summerschool/constants/user_roles.dart';
 import 'package:summerschool/core/constants/app_colors.dart';
+import 'package:summerschool/core/localization/app_localizations.dart';
 import 'package:summerschool/models/user_model.dart';
 import 'package:summerschool/providers/auth_provider.dart';
 import 'package:summerschool/screens/spiritual_notebook/read_only_member_notebook_screen.dart';
@@ -283,13 +284,13 @@ class _MembersTable extends StatelessWidget {
             constraints: const BoxConstraints(minWidth: 1100),
             child: DataTable(
               headingTextStyle: const TextStyle(fontWeight: FontWeight.w800),
-              columns: const [
-                DataColumn(label: Text('Name')),
-                DataColumn(label: Text('Phone')),
-                DataColumn(label: Text('Confession Father')),
-                DataColumn(label: Text('Role')),
-                DataColumn(label: Text('Stage')),
-                DataColumn(label: Text('Spiritual Note')),
+              columns: [
+                const DataColumn(label: Text('Name')),
+                const DataColumn(label: Text('Phone')),
+                const DataColumn(label: Text('Confession Father')),
+                const DataColumn(label: Text('Role')),
+                const DataColumn(label: Text('Stage')),
+                DataColumn(label: Text(context.tr('spiritual_note'))),
               ],
               rows: users.map((u) {
                 return DataRow(
@@ -302,7 +303,7 @@ class _MembersTable extends StatelessWidget {
                     DataCell(
                       OutlinedButton(
                         onPressed: () => onOpenNote(context, u),
-                        child: const Text('His Note'),
+                        child: Text(context.tr('spiritual_note')),
                       ),
                     ),
                   ],
@@ -349,7 +350,7 @@ class _MemberCard extends StatelessWidget {
               alignment: AlignmentDirectional.centerEnd,
               child: OutlinedButton(
                 onPressed: onOpenNote,
-                child: const Text('His Note'),
+                child: Text(context.tr('spiritual_note')),
               ),
             ),
           ],

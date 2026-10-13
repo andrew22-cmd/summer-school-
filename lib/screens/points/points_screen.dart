@@ -9,6 +9,7 @@ import 'package:summerschool/providers/points_provider.dart';
 import 'package:summerschool/screens/points/add_points_screen.dart';
 import 'package:summerschool/screens/points/points_history_screen.dart';
 import 'package:summerschool/services/points_service.dart';
+import 'package:summerschool/core/localization/app_localizations.dart';
 
 class PointsScreen extends StatefulWidget {
   const PointsScreen({super.key});
@@ -88,7 +89,7 @@ class _PointsScreenState extends State<PointsScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         foregroundColor: AppColors.primary,
-        title: const Text('Points'),
+        title: Text(context.tr('Points')),
         actions: [
           IconButton(
             tooltip: 'History',
@@ -124,7 +125,7 @@ class _PointsScreenState extends State<PointsScreen> {
                     onChanged: memberProvider.setSearch,
                     decoration: InputDecoration(
                       prefixIcon: const Icon(Icons.search_rounded),
-                      hintText: 'Search by student name',
+                      hintText: context.tr('search_student'),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -292,9 +293,9 @@ class _PointsStudentCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text('Stage: ${student.stage}'),
+                Text('${context.tr('stage')}: ${student.stage}'),
                 Text(
-                  'Total Points: $currentTotal',
+                  '${context.tr('total_points')}: $currentTotal',
                   style: const TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 16,
@@ -312,18 +313,18 @@ class _PointsStudentCard extends StatelessWidget {
                   OutlinedButton.icon(
                     onPressed: onAdd,
                     icon: const Icon(Icons.add_circle_outline),
-                    label: const Text('Add Points'),
+                    label: Text(context.tr('add_points')),
                   ),
                 if (canEdit)
                   OutlinedButton.icon(
                     onPressed: onRemove,
                     icon: const Icon(Icons.remove_circle_outline),
-                    label: const Text('Remove Points'),
+                    label: Text(context.tr('remove_points')),
                   ),
                 OutlinedButton.icon(
                   onPressed: onHistory,
                   icon: const Icon(Icons.history_rounded),
-                  label: const Text('View History'),
+                  label: Text(context.tr('view_history')),
                 ),
               ],
             );
@@ -378,11 +379,10 @@ class _EmptyPointsState extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                'No students found for $stage',
+                '${context.tr('no_students')} - $stage',
                 style: const TextStyle(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 4),
-              const Text('Points appear for students in your current stage.'),
             ],
           ),
         ),

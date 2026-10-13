@@ -7,6 +7,7 @@ import 'package:summerschool/core/routes/app_routes.dart';
 import 'package:summerschool/models/user_model.dart';
 import 'package:summerschool/providers/admin_users_provider.dart';
 import 'package:summerschool/services/backup_service.dart';
+import 'package:summerschool/core/localization/app_localizations.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -38,14 +39,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       await showDialog<void>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Backup created'),
+          title: Text(context.tr('backup_created')),
           content: SelectableText(
             'File name: ${backup.fileName}\nSize: ${(backup.sizeBytes / 1024).toStringAsFixed(1)} KB',
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('OK'),
+              child: Text(context.tr('ok')),
             ),
           ],
         ),
@@ -55,12 +56,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       await showDialog<void>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Backup failed'),
+          title: Text(context.tr('backup_failed')),
           content: Text(e.toString()),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Close'),
+              child: Text(context.tr('close')),
             ),
           ],
         ),
@@ -88,12 +89,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Backups',
+                    context.tr('backups'),
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 12),
                   if (backups.isEmpty)
-                    const Text('No backups found.')
+                    Text(context.tr('no_backups'))
                   else
                     Expanded(
                       child: ListView.separated(
@@ -492,7 +493,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Admin Dashboard'),
+        title: Text(context.tr('admin_dashboard')),
         actions: [
           IconButton(
             onPressed: () {
@@ -520,7 +521,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               children: [
                 Expanded(
                   child: _StatCard(
-                    title: 'All Users',
+                    title: context.tr('all_users'),
                     value: allUsers.length.toString(),
                     icon: Icons.groups_rounded,
                   ),
@@ -528,7 +529,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: _StatCard(
-                    title: 'Managers',
+                    title: context.tr('managers'),
                     value: managers.toString(),
                     icon: Icons.admin_panel_settings_rounded,
                   ),
@@ -536,7 +537,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: _StatCard(
-                    title: 'Member Managers',
+                    title: context.tr('member_managers'),
                     value: memberManagers.toString(),
                     icon: Icons.manage_accounts_rounded,
                   ),
@@ -557,7 +558,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                           )
                         : const Icon(Icons.backup_rounded),
                     label: Text(
-                      _isBackingUp ? 'Creating Backup...' : 'Create Backup',
+                      _isBackingUp
+                          ? context.tr('creating_backup')
+                          : context.tr('create_backup'),
                     ),
                   ),
                 ),
@@ -566,7 +569,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   child: OutlinedButton.icon(
                     onPressed: _isBackingUp ? null : _showBackups,
                     icon: const Icon(Icons.folder_open_rounded),
-                    label: const Text('View Backups'),
+                    label: Text(context.tr('view_backups')),
                   ),
                 ),
               ],
@@ -587,13 +590,42 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
-                title: const Text('Class Students'),
+                title: Text(context.tr('class_students')),
                 subtitle: const Text(
                   'Manage classroom records in class_members',
                 ),
                 trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 18),
                 onTap: () {
                   Navigator.pushNamed(context, AppRoutes.adminClassMembers);
+                },
+              ),
+            ),
+            const SizedBox(height: 12),
+            Card(
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(
+                  color: Theme.of(context).colorScheme.outlineVariant,
+                ),
+              ),
+              child: ListTile(
+                leading: CircleAvatar(
+                  child: Icon(
+                    Icons.format_list_bulleted_rounded,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+                title: const Text('Manage Schedule Subjects'),
+                subtitle: const Text(
+                  'Add or remove schedule subjects in Arabic and English.',
+                ),
+                trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 18),
+                onTap: () {
+                  Navigator.pushNamed(
+                    context,
+                    AppRoutes.manageScheduleSubjects,
+                  );
                 },
               ),
             ),
@@ -614,7 +646,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     setState(() => _searchQuery = value);
                   },
                   decoration: InputDecoration(
-                    hintText: 'Search by name, email, phone, stage, role...',
+                    hintText: context.tr('search_users'),
                     prefixIcon: const Icon(Icons.search_rounded),
                     suffixIcon: _searchQuery.isEmpty
                         ? null
@@ -637,7 +669,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               child: provider.isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : users.isEmpty
-                  ? const Center(child: Text('No users found.'))
+                  ? Center(child: Text(context.tr('no_users_found')))
                   : ListView.separated(
                       itemCount: users.length,
                       separatorBuilder: (_, __) => const SizedBox(height: 8),

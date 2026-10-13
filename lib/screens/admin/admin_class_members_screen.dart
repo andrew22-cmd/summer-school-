@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:summerschool/constants/user_roles.dart';
 import 'package:summerschool/core/constants/app_colors.dart';
 import 'package:summerschool/models/class_member_model.dart';
 import 'package:summerschool/providers/class_member_provider.dart';
@@ -191,9 +192,16 @@ class _AdminClassMembersViewState extends State<_AdminClassMembersView> {
 
                     try {
                       if (isEdit) {
-                        await provider.updateMember(data.id, data.toMap());
+                        await provider.updateMember(
+                          data.id,
+                          data.toMap(),
+                          requestedByRole: UserRole.manager,
+                        );
                       } else {
-                        await provider.addMember(data);
+                        await provider.addMember(
+                          data,
+                          requestedByRole: UserRole.manager,
+                        );
                       }
                       if (!context.mounted) return;
                       Navigator.pop(context, true);
@@ -252,7 +260,7 @@ class _AdminClassMembersViewState extends State<_AdminClassMembersView> {
     if (confirmed != true) return;
 
     try {
-      await provider.deleteMember(member.id);
+      await provider.deleteMember(member.id, requestedByRole: UserRole.manager);
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
@@ -278,6 +286,12 @@ class _AdminClassMembersViewState extends State<_AdminClassMembersView> {
         backgroundColor: Colors.white,
         foregroundColor: AppColors.primary,
         title: const Text('Class Students'),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showStudentForm(),
+        backgroundColor: AppColors.primary,
+        icon: const Icon(Icons.add_rounded),
+        label: const Text('Add Student'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
@@ -370,7 +384,9 @@ class _AdminClassMembersViewState extends State<_AdminClassMembersView> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     const SizedBox(height: 6),
-                                    Text('Stage: ${m.stage} | Year: ${m.year}'),
+                                    Text(
+                                      'Stage: ${m.stage} | Points: ${m.totalPoints}',
+                                    ),
                                     Text('Phone: ${m.phone}'),
                                     Text('Parent: ${m.parentPhone}'),
                                     Text('Confession: ${m.confessionFather}'),
@@ -436,7 +452,7 @@ class _StudentsTable extends StatelessWidget {
           columns: const [
             DataColumn(label: Text('Name')),
             DataColumn(label: Text('Stage')),
-            DataColumn(label: Text('Year')),
+            DataColumn(label: Text('Points')),
             DataColumn(label: Text('Phone')),
             DataColumn(label: Text('Parent Phone')),
             DataColumn(label: Text('Confession Father')),
@@ -449,7 +465,7 @@ class _StudentsTable extends StatelessWidget {
                   cells: [
                     DataCell(Text(m.name)),
                     DataCell(Text(m.stage)),
-                    DataCell(Text(m.year)),
+                    DataCell(Text(m.totalPoints.toString())),
                     DataCell(Text(m.phone)),
                     DataCell(Text(m.parentPhone)),
                     DataCell(Text(m.confessionFather)),

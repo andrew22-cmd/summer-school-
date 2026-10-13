@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:summerschool/models/schedule_subject_model.dart';
 import 'package:summerschool/models/weekly_schedule_item_model.dart';
 import 'package:summerschool/providers/auth_provider.dart';
 import 'package:summerschool/providers/weekly_schedule_provider.dart';
+import 'package:summerschool/services/schedule_subject_service.dart';
 import 'package:summerschool/services/weekly_schedule_service.dart';
+import 'package:summerschool/core/localization/app_localizations.dart';
 
 class AddWeeklyScheduleItemScreen extends StatefulWidget {
   const AddWeeklyScheduleItemScreen({
@@ -25,22 +28,8 @@ class AddWeeklyScheduleItemScreen extends StatefulWidget {
 class _AddWeeklyScheduleItemScreenState
     extends State<AddWeeklyScheduleItemScreen> {
   final _formKey = GlobalKey<FormState>();
-
-  static const List<String> _subjects = [
-    'Bible',
-    'Development',
-    'Talk About God',
-    'Rites',
-    'Stay Aware',
-    'Discoveries',
-    'Doctrine',
-    'Coptic and Hymns',
-    'Role Model',
-    'First Aid',
-    'Your Health',
-    'Learn from Nature',
-    'Other',
-  ];
+  final _scheduleSubjectService = ScheduleSubjectService();
+  List<ScheduleSubjectOption> _subjects = const [];
 
   late String _day;
   late String _subject;
@@ -59,7 +48,7 @@ class _AddWeeklyScheduleItemScreenState
     super.initState();
     final existing = widget.item;
     _day = existing?.day ?? widget.initialDay ?? WeeklyScheduleDays.sunday;
-    _subject = existing?.subject ?? _subjects.first;
+    _subject = existing?.subject ?? 'Bible';
     _customSubjectController = TextEditingController(
       text: existing?.customSubject ?? '',
     );
@@ -72,6 +61,8 @@ class _AddWeeklyScheduleItemScreenState
       _startTime = _minutesToTimeOfDay(existing.startTime);
       _endTime = _minutesToTimeOfDay(existing.endTime);
     }
+
+    _loadSubjects();
   }
 
   @override
@@ -80,6 +71,31 @@ class _AddWeeklyScheduleItemScreenState
     _servantNameController.dispose();
     _notesController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadSubjects() async {
+    try {
+      await _scheduleSubjectService.ensureDefaults();
+      final subjects = await _scheduleSubjectService.getSubjects();
+      if (!mounted) return;
+      setState(() {
+        _subjects = subjects;
+        if (_subjects.isNotEmpty &&
+            (_subject.isEmpty ||
+                !_subjects.any((subject) => subject.value == _subject))) {
+          _subject = _subjects.first.value;
+        }
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _subjects = ScheduleSubjectService.defaultSubjects.toList();
+        if (_subject.isEmpty ||
+            !_subjects.any((subject) => subject.value == _subject)) {
+          _subject = _subjects.first.value;
+        }
+      });
+    }
   }
 
   Future<void> _pickStartTime() async {
@@ -103,14 +119,14 @@ class _AddWeeklyScheduleItemScreenState
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     if (_startTime == null || _endTime == null) {
-      _showError('Please select both start and end time.');
+      _showError(context.tr('both_times_required'));
       return;
     }
 
     final startMinutes = _timeOfDayToMinutes(_startTime!);
     final endMinutes = _timeOfDayToMinutes(_endTime!);
     if (startMinutes >= endMinutes) {
-      _showError('Invalid time range: end time must be after start time.');
+      _showError(context.tr('invalid_time_range'));
       return;
     }
 
@@ -162,19 +178,17 @@ class _AddWeeklyScheduleItemScreenState
     final shouldDelete = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete item'),
-        content: const Text(
-          'Are you sure you want to delete this schedule item?',
-        ),
+        title: Text(context.tr('delete_item_title')),
+        content: Text(context.tr('delete_item_content')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(context.tr('cancel')),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Delete'),
+            child: Text(context.tr('delete')),
           ),
         ],
       ),
@@ -200,6 +214,23 @@ class _AddWeeklyScheduleItemScreenState
     );
   }
 
+  String _localizedSubject(String value) {
+    final option = _subjects.firstWhere(
+      (subject) => subject.value == value,
+      orElse: () => ScheduleSubjectOption(
+        id: value,
+        value: value,
+        arabicLabel: value,
+        sortOrder: 0,
+      ),
+    );
+
+    final locale = Localizations.localeOf(context).languageCode;
+    return locale == 'ar' && option.arabicLabel.isNotEmpty
+        ? option.arabicLabel
+        : option.value;
+  }
+
   @override
   Widget build(BuildContext context) {
     final isRtl = true;
@@ -207,7 +238,11 @@ class _AddWeeklyScheduleItemScreenState
       textDirection: isRtl ? TextDirection.ltr : TextDirection.ltr,
       child: Scaffold(
         appBar: AppBar(
-          title: Text(_isEdit ? 'Edit Schedule Item' : 'Add Schedule Item'),
+          title: Text(
+            _isEdit
+                ? context.tr('edit_schedule_item')
+                : context.tr('add_schedule_item'),
+          ),
           actions: [
             if (_isEdit)
               IconButton(
@@ -227,12 +262,14 @@ class _AddWeeklyScheduleItemScreenState
                 children: [
                   DropdownButtonFormField<String>(
                     value: _day,
-                    decoration: const InputDecoration(labelText: 'Day'),
+                    decoration: InputDecoration(labelText: context.tr('day')),
                     items: WeeklyScheduleDays.values
                         .map(
                           (d) => DropdownMenuItem(
                             value: d,
-                            child: Text(WeeklyScheduleDays.arabicLabel(d)),
+                            child: Text(
+                              context.tr(WeeklyScheduleDays.arabicLabel(d)),
+                            ),
                           ),
                         )
                         .toList(),
@@ -246,9 +283,16 @@ class _AddWeeklyScheduleItemScreenState
                   const SizedBox(height: 14),
                   DropdownButtonFormField<String>(
                     value: _subject,
-                    decoration: const InputDecoration(labelText: 'Subject'),
+                    decoration: InputDecoration(
+                      labelText: context.tr('subject'),
+                    ),
                     items: _subjects
-                        .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                        .map(
+                          (option) => DropdownMenuItem(
+                            value: option.value,
+                            child: Text(_localizedSubject(option.value)),
+                          ),
+                        )
                         .toList(),
                     onChanged: _saving
                         ? null
@@ -258,7 +302,7 @@ class _AddWeeklyScheduleItemScreenState
                           },
                     validator: (value) {
                       if ((value ?? '').trim().isEmpty) {
-                        return 'Subject is required.';
+                        return context.tr('subject_required');
                       }
                       return null;
                     },
@@ -268,13 +312,13 @@ class _AddWeeklyScheduleItemScreenState
                     TextFormField(
                       controller: _customSubjectController,
                       enabled: !_saving,
-                      decoration: const InputDecoration(
-                        labelText: 'Enter custom subject',
+                      decoration: InputDecoration(
+                        labelText: context.tr('enter_custom_subject'),
                       ),
                       validator: (value) {
                         if (_subject != 'Other') return null;
                         if ((value ?? '').trim().isEmpty) {
-                          return 'Please enter a custom subject.';
+                          return context.tr('custom_subject_required');
                         }
                         return null;
                       },
@@ -289,7 +333,7 @@ class _AddWeeklyScheduleItemScreenState
                           icon: const Icon(Icons.access_time_rounded),
                           label: Text(
                             _startTime == null
-                                ? 'Start Time'
+                                ? context.tr('start_time')
                                 : _formatTime(_startTime!),
                           ),
                         ),
@@ -301,7 +345,7 @@ class _AddWeeklyScheduleItemScreenState
                           icon: const Icon(Icons.access_time_filled_rounded),
                           label: Text(
                             _endTime == null
-                                ? 'End Time'
+                                ? context.tr('end_time')
                                 : _formatTime(_endTime!),
                           ),
                         ),
@@ -312,8 +356,8 @@ class _AddWeeklyScheduleItemScreenState
                   TextFormField(
                     controller: _servantNameController,
                     enabled: !_saving,
-                    decoration: const InputDecoration(
-                      labelText: 'Servant Name (Optional)',
+                    decoration: InputDecoration(
+                      labelText: context.tr('servant_optional'),
                     ),
                   ),
                   const SizedBox(height: 14),
@@ -321,8 +365,8 @@ class _AddWeeklyScheduleItemScreenState
                     controller: _notesController,
                     enabled: !_saving,
                     maxLines: 3,
-                    decoration: const InputDecoration(
-                      labelText: 'Notes (Optional)',
+                    decoration: InputDecoration(
+                      labelText: context.tr('notes_optional'),
                     ),
                   ),
                   const SizedBox(height: 22),
@@ -335,7 +379,9 @@ class _AddWeeklyScheduleItemScreenState
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Icon(Icons.save_rounded),
-                    label: Text(_isEdit ? 'Save Changes' : 'Add'),
+                    label: Text(
+                      _isEdit ? context.tr('save_changes') : context.tr('add'),
+                    ),
                   ),
                 ],
               ),

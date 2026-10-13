@@ -9,6 +9,7 @@ import 'package:summerschool/models/attachment_model.dart';
 import 'package:summerschool/providers/attachment_provider.dart';
 import 'package:summerschool/providers/auth_provider.dart';
 import 'package:summerschool/services/notification_service.dart';
+import 'package:summerschool/core/localization/app_localizations.dart';
 
 class ManageAttachmentsScreen extends StatefulWidget {
   const ManageAttachmentsScreen({super.key});
@@ -92,7 +93,7 @@ class _ManageAttachmentsScreenState extends State<ManageAttachmentsScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Error selecting file: $e')));
+      ).showSnackBar(SnackBar(content: Text('${context.tr('error_selecting_file')}: $e')));
     }
   }
 
@@ -100,7 +101,7 @@ class _ManageAttachmentsScreenState extends State<ManageAttachmentsScreen> {
     if (_selectedFile == null) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Please select a file')));
+      ).showSnackBar(SnackBar(content: Text(context.tr('please_select_file'))));
       return;
     }
 
@@ -108,7 +109,7 @@ class _ManageAttachmentsScreenState extends State<ManageAttachmentsScreen> {
     if (title.isEmpty) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Please enter a title')));
+      ).showSnackBar(SnackBar(content: Text(context.tr('please_enter_title'))));
       return;
     }
 
@@ -117,7 +118,7 @@ class _ManageAttachmentsScreenState extends State<ManageAttachmentsScreen> {
     if (user == null) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('User not found')));
+      ).showSnackBar(SnackBar(content: Text(context.tr('user_not_found'))));
       return;
     }
 
@@ -132,7 +133,7 @@ class _ManageAttachmentsScreenState extends State<ManageAttachmentsScreen> {
 
     if (bytes == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Unable to read file bytes')),
+        SnackBar(content: Text(context.tr('unable_read_file'))),
       );
       return;
     }
@@ -166,7 +167,7 @@ class _ManageAttachmentsScreenState extends State<ManageAttachmentsScreen> {
 
       debugPrint('[MANAGE ATTACHMENTS] upload success: $fileName');
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('File uploaded successfully')),
+        SnackBar(content: Text(context.tr('file_uploaded_success'))),
       );
     } catch (e) {
       debugPrint('[MANAGE ATTACHMENTS] upload error: $e');
@@ -177,7 +178,7 @@ class _ManageAttachmentsScreenState extends State<ManageAttachmentsScreen> {
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Upload failed: $e'),
+          content: Text('${context.tr('upload_failed')}: $e'),
           backgroundColor: Colors.red,
         ),
       );
@@ -199,7 +200,7 @@ class _ManageAttachmentsScreenState extends State<ManageAttachmentsScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         foregroundColor: AppColors.primary,
-        title: const Text('Manage Attachments'),
+        title: Text(context.tr('manage_attachments_page_title')),
       ),
       body: RefreshIndicator(
         onRefresh: _refresh,
@@ -209,7 +210,7 @@ class _ManageAttachmentsScreenState extends State<ManageAttachmentsScreen> {
             _buildUploadSection(),
             const SizedBox(height: 24),
             Text(
-              'Previously Uploaded Files',
+              context.tr('previously_uploaded'),
               style: Theme.of(
                 context,
               ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
@@ -242,7 +243,7 @@ class _ManageAttachmentsScreenState extends State<ManageAttachmentsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Upload Area',
+              context.tr('upload_area'),
               style: Theme.of(
                 context,
               ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
@@ -252,7 +253,7 @@ class _ManageAttachmentsScreenState extends State<ManageAttachmentsScreen> {
               controller: _titleController,
               enabled: !_isUploading,
               decoration: InputDecoration(
-                labelText: 'File title',
+                labelText: context.tr('file_title'),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -281,7 +282,7 @@ class _ManageAttachmentsScreenState extends State<ManageAttachmentsScreen> {
                   const SizedBox(height: 10),
                   Text(
                     _selectedFile == null
-                        ? 'No file selected'
+                        ? context.tr('no_file_selected')
                         : _selectedFile!.name,
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -301,7 +302,7 @@ class _ManageAttachmentsScreenState extends State<ManageAttachmentsScreen> {
                   OutlinedButton.icon(
                     onPressed: _isUploading ? null : _pickFile,
                     icon: const Icon(Icons.upload_file_rounded),
-                    label: const Text('UPLOAD FILE'),
+                    label: Text(context.tr('upload_file_btn')),
                   ),
                 ],
               ),
@@ -317,7 +318,7 @@ class _ManageAttachmentsScreenState extends State<ManageAttachmentsScreen> {
                 child: ElevatedButton.icon(
                   onPressed: _uploadFile,
                   icon: const Icon(Icons.send_rounded),
-                  label: const Text('SEND'),
+                  label: Text(context.tr('send_btn')),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
@@ -388,7 +389,7 @@ class _ManageAttachmentsScreenState extends State<ManageAttachmentsScreen> {
                   if (!mounted) return;
                   ScaffoldMessenger.of(
                     context,
-                  ).showSnackBar(SnackBar(content: Text('Open failed: $e')));
+                  ).showSnackBar(SnackBar(content: Text('${context.tr('open_failed')}: $e')));
                 }
               },
             ),
@@ -412,7 +413,7 @@ class _ManageAttachmentsScreenState extends State<ManageAttachmentsScreen> {
             Icon(Icons.folder_open_rounded, size: 64, color: Colors.grey[400]),
             const SizedBox(height: 12),
             Text(
-              'No files uploaded yet',
+              context.tr('no_files_yet'),
               style: Theme.of(
                 context,
               ).textTheme.titleMedium?.copyWith(color: Colors.grey[600]),
@@ -461,21 +462,21 @@ class _ManageAttachmentsScreenState extends State<ManageAttachmentsScreen> {
             }
           },
           decoration: InputDecoration(
-            labelText: 'Send To',
+            labelText: context.tr('send_to'),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           ),
           items: [
             DropdownMenuItem(
               value: 'managers',
-              child: const Text('Managers Only'),
+              child: Text(context.tr('managers_only')),
             ),
             DropdownMenuItem(
               value: 'member_managers',
-              child: const Text('Member Managers Only'),
+              child: Text(context.tr('member_managers_only')),
             ),
             DropdownMenuItem(
               value: 'all_servants',
-              child: const Text('All Servants'),
+              child: Text(context.tr('all_servants')),
             ),
           ],
         );
@@ -489,16 +490,16 @@ class _ManageAttachmentsScreenState extends State<ManageAttachmentsScreen> {
 
     switch (targetRole) {
       case 'managers':
-        displayText = 'Managers Only';
+        displayText = context.tr('managers_only');
         bgColor = Colors.red.shade100;
         break;
       case 'member_managers':
-        displayText = 'Member Managers';
+        displayText = context.tr('member_managers_only');
         bgColor = Colors.orange.shade100;
         break;
       case 'all_servants':
       default:
-        displayText = 'All Servants';
+        displayText = context.tr('all_servants');
         bgColor = Colors.green.shade100;
     }
 
@@ -523,18 +524,18 @@ class _ManageAttachmentsScreenState extends State<ManageAttachmentsScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete File?'),
+        title: Text(context.tr('delete_file')),
         content: Text(
-          'Are you sure you want to delete "${attachment.fileName}"?',
+          '${context.tr('delete_file_confirm')} "${attachment.fileName}"?',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(context.tr('cancel')),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            child: Text(context.tr('delete'), style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -549,7 +550,7 @@ class _ManageAttachmentsScreenState extends State<ManageAttachmentsScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('${attachment.fileName} deleted successfully'),
+          content: Text('${attachment.fileName} ${context.tr('deleted_success')}'),
           backgroundColor: Colors.green,
         ),
       );
@@ -558,7 +559,7 @@ class _ManageAttachmentsScreenState extends State<ManageAttachmentsScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to delete file: $e'),
+          content: Text('${context.tr('failed_delete')}: $e'),
           backgroundColor: Colors.red,
         ),
       );

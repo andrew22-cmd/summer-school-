@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:summerschool/models/notification_center_item_model.dart';
 import 'package:summerschool/providers/auth_provider.dart';
 import 'package:summerschool/services/notification_service.dart';
+import 'package:summerschool/core/localization/app_localizations.dart';
 
 class NotificationCenterScreen extends StatefulWidget {
   const NotificationCenterScreen({super.key});
@@ -23,14 +24,14 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
 
     if (user == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Notifications')),
-        body: const Center(child: Text('Please sign in first')),
+        appBar: AppBar(title: Text(context.tr('notification_center_title'))),
+        body: Center(child: Text(context.tr('please_sign_in'))),
       );
     }
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Notifications'),
+        title: Text(context.tr('notification_center_title')),
         actions: [
           StreamBuilder<int>(
             stream: _service.watchUnreadCount(user.id),
@@ -50,7 +51,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
                       borderRadius: BorderRadius.circular(999),
                     ),
                     child: Text(
-                      '$unreadCount unread',
+                      '$unreadCount ${context.tr('unread_label')}',
                       style: Theme.of(context).textTheme.labelMedium,
                     ),
                   ),
@@ -91,7 +92,7 @@ class NotificationCenterContent extends StatelessWidget {
 
         final notifications = snapshot.data ?? [];
         if (notifications.isEmpty)
-          return const Center(child: Text('No notifications'));
+          return Center(child: Text(context.tr('no_notifications')));
 
         final listView = ListView.builder(
           physics: const BouncingScrollPhysics(),
@@ -263,7 +264,7 @@ class _NotificationTile extends StatelessWidget {
                                   size: 18,
                                 ),
                               IconButton(
-                                tooltip: 'Delete notification',
+                                tooltip: context.tr('delete_notification'),
                                 padding: EdgeInsets.zero,
                                 constraints: const BoxConstraints(),
                                 iconSize: 18,
@@ -299,7 +300,7 @@ Future<void> showNotificationsBottomSheet(BuildContext context) async {
   if (user == null) {
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Please sign in first')));
+    ).showSnackBar(SnackBar(content: Text(context.tr('please_sign_in'))));
     return;
   }
 
@@ -330,17 +331,17 @@ Future<void> showNotificationsBottomSheet(BuildContext context) async {
               padding: const EdgeInsets.fromLTRB(16, 10, 8, 8),
               child: Row(
                 children: [
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      'Notifications',
-                      style: TextStyle(
+                      context.tr('notification_center_title'),
+                      style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                   ),
                   IconButton(
-                    tooltip: 'Close',
+                    tooltip: context.tr('close'),
                     onPressed: () => Navigator.pop(sheetContext),
                     icon: const Icon(Icons.close_rounded),
                   ),

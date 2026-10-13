@@ -5,6 +5,7 @@ import 'package:summerschool/models/user_model.dart';
 import 'package:summerschool/providers/spiritual_notebook_provider.dart';
 import 'package:summerschool/services/spiritual_notebook_service.dart';
 import 'package:summerschool/widgets/spiritual_notebook/spiritual_notebook_table.dart';
+import 'package:summerschool/core/localization/app_localizations.dart';
 
 class ReadOnlyMemberNotebookScreen extends StatefulWidget {
   const ReadOnlyMemberNotebookScreen({super.key, required this.member});
@@ -92,17 +93,17 @@ class _ReadOnlyMemberNotebookScreenState
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Member: ${widget.member.name}',
+                              '${context.tr("student_label")}${widget.member.name}',
                               style: const TextStyle(
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
                             const SizedBox(height: 4),
-                            Text('Stage: ${widget.member.stage}'),
-                            Text('Class: ${widget.member.className}'),
+                            Text('${context.tr("stage_label")}${widget.member.stage}'),
+                            Text('${context.tr("Class")}: ${widget.member.className}'),
                             const SizedBox(height: 8),
-                            Text('Date: ${_formatDate(now)}'),
-                            Text('Day: ${_arabicDay(now.weekday)}'),
+                            Text('${context.tr("date")}: ${_formatDate(now)}'),
+                            Text('${context.tr("day_label")}${context.tr(_arabicDay(now.weekday))}'),
                             const SizedBox(height: 8),
                             Row(
                               children: [
@@ -121,7 +122,7 @@ class _ReadOnlyMemberNotebookScreenState
                                 Expanded(
                                   child: Center(
                                     child: Text(
-                                      'Week start: ${_formatDate(weekStartDate)}',
+                                      '${context.tr("week_start")}${_formatDate(weekStartDate)}',
                                       style: const TextStyle(
                                         fontWeight: FontWeight.w600,
                                       ),
@@ -173,7 +174,7 @@ class _ReadOnlyMemberNotebookScreenState
                       child: provider.isLoading && notebook == null
                           ? const Center(child: CircularProgressIndicator())
                           : notebook == null
-                          ? const Center(child: Text('No notebook data found.'))
+                          ? Center(child: Text(context.tr('no_notebook_data')))
                           : SingleChildScrollView(
                               padding: const EdgeInsets.only(bottom: 24),
                               child: SpiritualNotebookTable(

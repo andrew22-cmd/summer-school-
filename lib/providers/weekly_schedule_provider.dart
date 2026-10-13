@@ -141,4 +141,32 @@ class WeeklyScheduleDays {
         return value;
     }
   }
+
+  static String dayForDate(DateTime date) {
+    if (date.weekday == DateTime.wednesday) {
+      return wednesday;
+    }
+    return sunday;
+  }
+
+  static DateTime dateForDay(String day, DateTime weekStart) {
+    if (day == wednesday) {
+      return weekStart.add(const Duration(days: 3));
+    }
+    return weekStart;
+  }
+
+  static String defaultSelectedDayForWeek(DateTime weekStart) {
+    final today = DateTime.now();
+    final weekEnd = weekStart.add(const Duration(days: 6));
+
+    if (!today.isBefore(weekStart) && !today.isAfter(weekEnd)) {
+      final selected = dayForDate(today);
+      if (selected == sunday || selected == wednesday) {
+        return selected;
+      }
+    }
+
+    return sunday;
+  }
 }

@@ -41,6 +41,10 @@ class NotificationService {
       throw Exception('You are not allowed to send notifications.');
     }
 
+    final nameParts = sender.name.trim().split(' ').where((e) => e.isNotEmpty).toList();
+    final displayName = nameParts.take(2).join(' ');
+    final formattedTitle = displayName.isNotEmpty ? '$displayName — ${title.trim()}' : title.trim();
+
     final normalizedRoles = targetRoles
         .map((e) => e.trim())
         .where((e) => e.isNotEmpty)
@@ -62,7 +66,7 @@ class NotificationService {
     final ref = _notifications.doc();
     final model = AppNotificationModel(
       id: ref.id,
-      title: title.trim(),
+      title: formattedTitle,
       body: body.trim(),
       targetRoles: effectiveRoles,
       targetStages: effectiveStages,
@@ -98,6 +102,10 @@ class NotificationService {
           'userId': userId,
           'isRead': false,
           'createdAt': now,
+          // Denormalized fields — eliminates N+1 reads in watchNotificationCenter
+          'title': formattedTitle,
+          'body': body.trim(),
+          'isImportant': isImportant,
         });
       }
       await batch.commit();
@@ -105,7 +113,7 @@ class NotificationService {
 
     await _dispatchPushNotification(
       sender: sender,
-      title: title,
+      title: formattedTitle,
       body: body,
       recipientIds: recipientIds.toSet(),
       targetRoles: effectiveRoles,
@@ -190,45 +198,36 @@ class NotificationService {
         );
   }
 
+  /// Single-query implementation — no N+1 reads.
+  /// Requires that 'title', 'body', and 'isImportant' are denormalized into
+  /// every user_notifications document at creation time (see createNotification
+  /// and createAutomaticNotification).
   Stream<List<NotificationCenterItemModel>> watchNotificationCenter(
     String userId,
   ) {
-    return watchUserNotifications(userId).asyncMap((userNotifs) async {
-      final items = await Future.wait(
-        userNotifs.map((userNotif) async {
-          final notifDoc = await _notifications
-              .doc(userNotif.notificationId)
-              .get();
-          final notifData = notifDoc.data();
-
-          if (notifData == null) {
+    return _userNotifications
+        .where('userId', isEqualTo: userId)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snap) {
+          final items = snap.docs.map((doc) {
+            final data = doc.data();
+            final createdAtRaw = data['createdAt'];
+            final DateTime createdAt = createdAtRaw is Timestamp
+                ? createdAtRaw.toDate()
+                : DateTime.now();
             return NotificationCenterItemModel(
-              userNotificationId: userNotif.id,
-              notificationId: userNotif.notificationId,
-              title: 'Notification',
-              body: 'This notification has been deleted.',
-              createdAt: userNotif.createdAt,
-              isRead: userNotif.isRead,
-              isImportant: false,
+              userNotificationId: doc.id,
+              notificationId: (data['notificationId'] ?? '').toString(),
+              title: (data['title'] ?? 'Notification').toString(),
+              body: (data['body'] ?? '').toString(),
+              createdAt: createdAt,
+              isRead: (data['isRead'] ?? false) == true,
+              isImportant: (data['isImportant'] ?? false) == true,
             );
-          }
-
-          final notif = AppNotificationModel.fromMap(notifData);
-          return NotificationCenterItemModel(
-            userNotificationId: userNotif.id,
-            notificationId: notif.id,
-            title: notif.title,
-            body: notif.body,
-            createdAt: userNotif.createdAt,
-            isRead: userNotif.isRead,
-            isImportant: notif.isImportant,
-          );
-        }),
-      );
-
-      items.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-      return items;
-    });
+          }).toList();
+          return items;
+        });
   }
 
   Future<void> markAsRead(String docId) async {
@@ -382,7 +381,7 @@ class NotificationService {
 
       await ref.set(model.toMap());
 
-      // Create per-user notification entries
+      // Create per-user notification entries (denormalized for single-query reads)
       final now = Timestamp.fromDate(DateTime.now());
       for (var i = 0; i < recipientIds.length; i += 400) {
         final chunk = recipientIds.skip(i).take(400).toList();
@@ -395,6 +394,10 @@ class NotificationService {
             'userId': userId,
             'isRead': false,
             'createdAt': now,
+            // Denormalized fields — eliminates N+1 reads in watchNotificationCenter
+            'title': title.trim(),
+            'body': body.trim(),
+            'isImportant': false,
           });
         }
         await batch.commit();

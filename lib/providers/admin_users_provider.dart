@@ -62,7 +62,8 @@ class AdminUsersProvider extends ChangeNotifier {
         role: role.value,
         stage: stage.trim(),
       );
-      // Realtime listener will automatically update _users list
+      // Force a fresh read immediately in case the stream is delayed.
+      startListening();
     } catch (error) {
       _errorMessage = error.toString().replaceFirst('Exception: ', '');
       rethrow;
@@ -93,6 +94,7 @@ class AdminUsersProvider extends ChangeNotifier {
         'class': stage.trim(),
         'email': email.trim(),
       });
+      startListening();
     } catch (error) {
       _errorMessage = error.toString().replaceFirst('Exception: ', '');
       rethrow;
@@ -107,6 +109,7 @@ class AdminUsersProvider extends ChangeNotifier {
 
     try {
       await _firestoreUserService.deleteUser(id);
+      startListening();
     } catch (error) {
       _errorMessage = error.toString().replaceFirst('Exception: ', '');
       rethrow;

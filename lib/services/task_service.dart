@@ -317,7 +317,11 @@ class TaskService {
     return historyList;
   }
 
-  /// Watch all tasks (for managers and member managers)
+  /// Watch all tasks (for managers and member managers).
+  /// Filters are applied server-side in Firestore to minimise document reads.
+  /// A .limit(50) safety cap prevents runaway reads as data grows.
+  /// Text search (searchQuery) cannot be pushed to Firestore without a
+  /// dedicated search service, so it remains client-side on the capped set.
   Stream<List<TaskModel>> watchAllTasks({
     required UserModel currentUser,
     String? searchQuery,
@@ -327,54 +331,64 @@ class TaskService {
   }) {
     Query query = _firestore.collection(collection);
 
-    // Filter by stage for member_managers
+    // --- Server-side filters ---
+
+    // member_managers are always scoped to their own stage.
     if (currentUser.role == UserRole.memberManager) {
-      final normalizedStage = normalizeStage(currentUser.stage);
-      query = query.where('stage_norm', isEqualTo: normalizedStage);
+      query = query.where(
+        'stage_norm',
+        isEqualTo: normalizeStage(currentUser.stage),
+      );
+    } else if (stageFilter != null && stageFilter.isNotEmpty) {
+      // Managers can optionally filter by a specific stage.
+      query = query.where(
+        'stage_norm',
+        isEqualTo: normalizeStage(stageFilter),
+      );
     }
 
-    return query.orderBy('createdAt', descending: true).snapshots().map((
-      snapshot,
-    ) {
-      var tasks = snapshot.docs
-          .map(
-            (doc) =>
-                TaskModel.fromMap(doc.data() as Map<String, dynamic>, doc.id),
-          )
-          .toList();
+    if (statusFilter != null && statusFilter.isNotEmpty) {
+      query = query.where('status', isEqualTo: statusFilter);
+    }
 
-      // Apply filters
-      if (statusFilter != null && statusFilter.isNotEmpty) {
-        tasks = tasks.where((t) => t.status == statusFilter).toList();
-      }
+    if (roleFilter != null && roleFilter.isNotEmpty) {
+      query = query.where('assignedToRole', isEqualTo: roleFilter);
+    }
 
-      if (stageFilter != null && stageFilter.isNotEmpty) {
-        final normalized = normalizeStage(stageFilter);
-        tasks = tasks.where((t) => t.stageNorm == normalized).toList();
-      }
+    return query
+        .orderBy('createdAt', descending: true)
+        .limit(50) // Safety pagination cap
+        .snapshots()
+        .map((snapshot) {
+          var tasks = snapshot.docs
+              .map(
+                (doc) => TaskModel.fromMap(
+                  doc.data() as Map<String, dynamic>,
+                  doc.id,
+                ),
+              )
+              .toList();
 
-      if (roleFilter != null && roleFilter.isNotEmpty) {
-        tasks = tasks.where((t) => t.assignedToRole == roleFilter).toList();
-      }
+          // Text search must remain client-side (Firestore has no substring
+          // matching). It now operates on a pre-filtered, limit-capped set.
+          if (searchQuery != null && searchQuery.isNotEmpty) {
+            final q = searchQuery.toLowerCase();
+            tasks = tasks
+                .where(
+                  (t) =>
+                      t.title.toLowerCase().contains(q) ||
+                      t.assignedToName.toLowerCase().contains(q),
+                )
+                .toList();
+          }
 
-      // Apply search
-      if (searchQuery != null && searchQuery.isNotEmpty) {
-        final query = searchQuery.toLowerCase();
-        tasks = tasks
-            .where(
-              (t) =>
-                  t.title.toLowerCase().contains(query) ||
-                  t.assignedToName.toLowerCase().contains(query),
-            )
-            .toList();
-      }
+          debugPrint(
+            '[TaskService] watchAllTasks snapshot: user=${currentUser.role.value}, '
+            'total=${snapshot.docs.length}, filtered=${tasks.length}',
+          );
 
-      debugPrint(
-        '[TaskService] watchAllTasks snapshot: user=${currentUser.role.value}, total=${snapshot.docs.length}, filtered=${tasks.length}',
-      );
-
-      return tasks;
-    });
+          return tasks;
+        });
   }
 
   /// Update task status

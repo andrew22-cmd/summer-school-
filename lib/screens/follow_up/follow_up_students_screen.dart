@@ -8,6 +8,7 @@ import 'package:summerschool/constants/user_roles.dart';
 import 'package:summerschool/providers/follow_up_provider.dart';
 import 'package:summerschool/screens/follow_up/follow_up_details_screen.dart';
 import 'package:summerschool/services/follow_up_service.dart';
+import 'package:summerschool/core/localization/app_localizations.dart';
 
 class FollowUpStudentsScreen extends StatefulWidget {
   const FollowUpStudentsScreen({
@@ -67,7 +68,7 @@ class _FollowUpStudentsScreenState extends State<FollowUpStudentsScreen> {
     if (user == null ||
         (!auth.isMemberManager && !auth.isMember && !auth.isManager)) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Visits')),
+        appBar: AppBar(title: Text(context.tr('Visits'))),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -87,7 +88,7 @@ class _FollowUpStudentsScreenState extends State<FollowUpStudentsScreen> {
 
     if (effectiveStage.trim().isEmpty) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Visits')),
+        appBar: AppBar(title: Text(context.tr('Visits'))),
         body: const Center(
           child: Text('No stage is currently linked to your account.'),
         ),
@@ -97,12 +98,9 @@ class _FollowUpStudentsScreenState extends State<FollowUpStudentsScreen> {
     final provider = context.watch<FollowUpProvider>();
     final stageLabel = effectiveStage;
     final isReadOnly = widget.readOnly;
-    final membersOnlyPending = !isReadOnly && !auth.isMemberManager;
-    final visibleStudents = membersOnlyPending
-        ? provider.students
-              .where((s) => !provider.contactedForStudent(s.id))
-              .toList()
-        : provider.students;
+    // Hiding logic disabled: all students are always visible regardless of
+    // visit count. Members see the full list even after 2+ visitations.
+    final visibleStudents = provider.students;
     if (!provider.isLoading) {
       debugPrint(
         '[Manager][Visits] visits loaded stage="$stageLabel" students=${provider.students.length} visible=${visibleStudents.length} readOnly=$isReadOnly',
@@ -115,7 +113,11 @@ class _FollowUpStudentsScreenState extends State<FollowUpStudentsScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         foregroundColor: AppColors.primary,
-        title: Text(isReadOnly ? 'Visits (Read Only)' : 'Visits'),
+        title: Text(
+          isReadOnly
+              ? '${context.tr('Visits')} (${context.tr('read_only')})'
+              : context.tr('Visits'),
+        ),
       ),
       body: SafeArea(
         child: RefreshIndicator(
@@ -150,7 +152,7 @@ class _FollowUpStudentsScreenState extends State<FollowUpStudentsScreen> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Stage Students',
+                      context.tr('stage_students'),
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w800,
                       ),
@@ -164,7 +166,7 @@ class _FollowUpStudentsScreenState extends State<FollowUpStudentsScreen> {
                     else if (provider.error != null)
                       _buildError(provider.error!)
                     else if (visibleStudents.isEmpty)
-                      _buildEmptyState(membersOnlyPending)
+                      _buildEmptyState()
                     else
                       GridView.builder(
                         shrinkWrap: true,
@@ -220,7 +222,7 @@ class _FollowUpStudentsScreenState extends State<FollowUpStudentsScreen> {
         return StatefulBuilder(
           builder: (ctx, setInner) {
             return AlertDialog(
-              title: const Text('Choose month'),
+              title: Text(context.tr('choose_month')),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -250,10 +252,33 @@ class _FollowUpStudentsScreenState extends State<FollowUpStudentsScreen> {
                       final isSelected = m == selMonth;
                       final label = DateFormat.MMM().format(DateTime(0, m));
                       return ChoiceChip(
-                        label: Text(label),
+                        label: Text(
+                          label,
+                          style: TextStyle(
+                            color: isSelected
+                                ? Colors.white
+                                : AppColors.primary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                         selected: isSelected,
                         onSelected: (_) => setInner(() => selMonth = m),
-                        selectedColor: Theme.of(context).primaryColor,
+                        backgroundColor: Colors.white,
+                        selectedColor: AppColors.primary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: BorderSide(
+                            color: isSelected
+                                ? AppColors.primary
+                                : Colors.grey.shade300,
+                          ),
+                        ),
+                        side: BorderSide(
+                          color: isSelected
+                              ? AppColors.primary
+                              : Colors.grey.shade300,
+                        ),
+                        labelPadding: const EdgeInsets.symmetric(horizontal: 8),
                       );
                     }),
                   ),
@@ -262,11 +287,11 @@ class _FollowUpStudentsScreenState extends State<FollowUpStudentsScreen> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(ctx).pop(false),
-                  child: const Text('Cancel'),
+                  child: Text(context.tr('cancel')),
                 ),
                 ElevatedButton(
                   onPressed: () => Navigator.of(ctx).pop(true),
-                  child: const Text('OK'),
+                  child: Text(context.tr('ok')),
                 ),
               ],
             );
@@ -306,11 +331,7 @@ class _FollowUpStudentsScreenState extends State<FollowUpStudentsScreen> {
     );
   }
 
-  Widget _buildEmptyState(bool membersOnlyPending) {
-    final message = membersOnlyPending
-        ? 'Great job. No pending (not-contacted) students for this month.'
-        : 'No students found in your stage at the moment.';
-
+  Widget _buildEmptyState() {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 40),
       child: Center(
@@ -318,7 +339,10 @@ class _FollowUpStudentsScreenState extends State<FollowUpStudentsScreen> {
           children: [
             Icon(Icons.groups_rounded, size: 64, color: Colors.grey.shade400),
             const SizedBox(height: 12),
-            Text(message, style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              context.tr('no_students'),
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
           ],
         ),
       ),
@@ -356,8 +380,8 @@ class _HeaderCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Monthly Visits Follow-up',
+          Text(
+            context.tr('monthly_visits'),
             style: TextStyle(
               color: Colors.white,
               fontSize: 20,
@@ -365,10 +389,13 @@ class _HeaderCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 10),
-          Text('Stage: $stage', style: const TextStyle(color: Colors.white70)),
+          Text(
+            '${context.tr('stage')}: $stage',
+            style: const TextStyle(color: Colors.white70),
+          ),
           const SizedBox(height: 4),
           Text(
-            'Selected month: $weekLabel',
+            '${context.tr('selected_month')}: $weekLabel',
             style: const TextStyle(color: Colors.white70),
           ),
         ],
@@ -407,7 +434,7 @@ class _MonthSelector extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Selected Month',
+                    context.tr('selected_month'),
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w800,
                     ),
@@ -424,7 +451,7 @@ class _MonthSelector extends StatelessWidget {
             OutlinedButton.icon(
               onPressed: onPickMonth,
               icon: const Icon(Icons.date_range_rounded),
-              label: const Text('Choose Month'),
+              label: Text(context.tr('choose_month')),
             ),
           ],
         ),
@@ -495,7 +522,9 @@ class _StudentCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        visitsCount >= 2 ? 'Contacted' : 'Not contacted',
+                        visitsCount >= 2
+                            ? context.tr('contacted')
+                            : context.tr('not_contacted'),
                         style: TextStyle(
                           color: statusColor,
                           fontWeight: FontWeight.w700,
@@ -509,7 +538,7 @@ class _StudentCard extends StatelessWidget {
             ),
             const SizedBox(height: 14),
             Text(
-              'Stage: ${student.stage}',
+              '${context.tr('stage')}: ${student.stage}',
               style: TextStyle(color: Colors.grey.shade700),
             ),
             const Spacer(),
@@ -525,7 +554,7 @@ class _StudentCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text('Visit Details'),
+                child: Text(context.tr('visit_details')),
               ),
             ),
           ],

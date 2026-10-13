@@ -8,6 +8,7 @@ import 'package:summerschool/providers/auth_provider.dart';
 import 'package:summerschool/providers/task_provider.dart';
 import 'package:summerschool/screens/tasks/task_history_screen.dart';
 import 'package:summerschool/screens/tasks/edit_task_screen.dart';
+import 'package:summerschool/core/localization/app_localizations.dart';
 
 class MyTasksScreen extends StatefulWidget {
   const MyTasksScreen({super.key});
@@ -48,7 +49,7 @@ class _MyTasksScreenState extends State<MyTasksScreen> {
 
     if (!auth.isMember && !auth.isMemberManager) {
       return Scaffold(
-        appBar: AppBar(title: const Text('My Tasks')),
+        appBar: AppBar(title: Text(context.tr('my_tasks'))),
         body: const Center(child: Text('This page is for members only.')),
       );
     }
@@ -60,7 +61,7 @@ class _MyTasksScreenState extends State<MyTasksScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         foregroundColor: AppColors.primary,
-        title: const Text('My Tasks'),
+        title: Text(context.tr('my_tasks')),
       ),
       body: RefreshIndicator(
         onRefresh: () async {
@@ -71,7 +72,7 @@ class _MyTasksScreenState extends State<MyTasksScreen> {
             : taskProvider.myTasksError != null
             ? Center(child: Text('Error: ${taskProvider.myTasksError}'))
             : taskProvider.myTasks.isEmpty
-            ? const Center(child: Text('No tasks available right now'))
+            ? Center(child: Text(context.tr('no_tasks')))
             : ListView.builder(
                 padding: const EdgeInsets.all(16),
                 itemCount: taskProvider.myTasks.length,
@@ -87,8 +88,8 @@ class _MyTasksScreenState extends State<MyTasksScreen> {
                 Navigator.pushNamed(context, AppRoutes.manageTasks);
               },
               backgroundColor: AppColors.primary,
-              tooltip: 'Add Task',
-              child: const Icon(Icons.add_rounded),
+              tooltip: context.tr('add_task'),
+              child: const Icon(Icons.add_rounded, color: Colors.white),
             )
           : null,
     );
@@ -140,13 +141,13 @@ class _TaskCard extends StatelessWidget {
                       color: Colors.green.withOpacity(0.12),
                       borderRadius: BorderRadius.circular(999),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.check_circle, size: 16, color: Colors.green),
+                        const Icon(Icons.check_circle, size: 16, color: Colors.green),
                         SizedBox(width: 6),
                         Text(
-                          'Completed',
+                          context.tr('complete'),
                           style: TextStyle(
                             color: Colors.green,
                             fontWeight: FontWeight.w700,
@@ -160,14 +161,14 @@ class _TaskCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(task.description),
             const SizedBox(height: 10),
-            Text('Assigned by: ${task.assignedByName}'),
-            Text('Due date: ${DateFormat('yyyy/MM/dd').format(task.dueDate)}'),
+            Text('${context.tr('assigned_by')}: ${task.assignedByName}'),
+            Text('${context.tr('due_date')}: ${DateFormat('yyyy/MM/dd').format(task.dueDate)}'),
             Text(
-              'Created: ${DateFormat('yyyy/MM/dd HH:mm').format(task.createdAt)}',
+              '${context.tr('created')}: ${DateFormat('yyyy/MM/dd HH:mm').format(task.createdAt)}',
             ),
             if (task.completedAt != null)
               Text(
-                'Completed at: ${DateFormat('yyyy/MM/dd HH:mm').format(task.completedAt!)}',
+                '${context.tr('completed_at')}: ${DateFormat('yyyy/MM/dd HH:mm').format(task.completedAt!)}',
               ),
             if (task.history.isNotEmpty && isManager)
               Row(
@@ -183,7 +184,7 @@ class _TaskCard extends StatelessWidget {
                         );
                       },
                       icon: const Icon(Icons.history_rounded),
-                      label: const Text('View History'),
+                      label: Text(context.tr('view_history')),
                     ),
                   ),
                   if (!isCompleted)
@@ -197,7 +198,7 @@ class _TaskCard extends StatelessWidget {
                         );
                       },
                       icon: const Icon(Icons.edit_rounded),
-                      label: const Text('Edit'),
+                      label: Text(context.tr('edit')),
                     ),
                 ],
               )
@@ -214,7 +215,7 @@ class _TaskCard extends StatelessWidget {
                     );
                   },
                   icon: const Icon(Icons.edit_rounded),
-                  label: const Text('Edit'),
+                  label: Text(context.tr('edit')),
                 ),
               ),
             const SizedBox(height: 10),
@@ -233,7 +234,7 @@ class _TaskCard extends StatelessWidget {
                     }
                   },
                   icon: const Icon(Icons.check_rounded),
-                  label: const Text('Mark Completed ✅'),
+                  label: Text(context.tr('mark_completed')),
                 ),
               ),
           ],

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:firebase_core/firebase_core.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 import 'package:summerschool/providers/class_member_provider.dart';
 import 'package:summerschool/providers/attendance_provider.dart';
@@ -11,6 +13,8 @@ import 'package:summerschool/services/fcm_service.dart';
 import 'package:summerschool/services/attachment_service.dart';
 import 'package:summerschool/services/follow_up_service.dart';
 import 'package:summerschool/services/task_service.dart';
+import 'package:summerschool/providers/locale_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'core/app.dart';
 import 'firebase_options.dart';
 import 'services/class_member_service.dart';
@@ -19,6 +23,7 @@ import 'providers/auth_provider.dart';
 import 'services/firestore_user_service.dart';
 import 'services/local_storage_service.dart';
 import 'services/points_service.dart';
+
 // (done)weekly schd. will be sunday and wednsday
 // (done)for manager can see history of points
 //(done)manager can in attachments send for member-manager or managers only not members or all
@@ -30,17 +35,26 @@ import 'services/points_service.dart';
 // where I need to make it pdf good for printing
 // gembeooyny -->imp
 //(done) in visits member can visit total 2 in month and date that he visit in can manager and mebermanager see it
-// (done)attendance of members
-
+// (done)attendance of member
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await _initializeFirebase();
+  await initializeDateFormatting('ar', null);
 
   final fcmService = FcmService();
   await fcmService.initialize();
 
   final localStorage = LocalStorageService();
-  await _runSilentStageNormMigration(localStorage);
+
+  if (firebase_auth.FirebaseAuth.instance.currentUser != null) {
+    await _runSilentStageNormMigration(localStorage);
+  } else {
+    debugPrint(
+      '[StartupMigration] Skipped because no authenticated user is present yet.',
+    );
+  }
+
+  final prefs = await SharedPreferences.getInstance();
 
   runApp(
     MultiProvider(
@@ -76,6 +90,9 @@ Future<void> main() async {
         ChangeNotifierProvider<AttachmentProvider>(
           create: (_) => AttachmentProvider(AttachmentService()),
         ),
+        ChangeNotifierProvider<LocaleProvider>(
+          create: (_) => LocaleProvider(prefs),
+        ),
       ],
       child: const SummerSchoolApp(),
     ),
@@ -86,6 +103,14 @@ Future<void> _runSilentStageNormMigration(
   LocalStorageService localStorage,
 ) async {
   try {
+    final currentUser = firebase_auth.FirebaseAuth.instance.currentUser;
+    if (currentUser == null) {
+      debugPrint(
+        '[StartupMigration] Skipped because no authenticated user is present.',
+      );
+      return;
+    }
+
     final alreadyMigrated = await localStorage
         .getClassMembersStageNormMigrated();
     if (alreadyMigrated) {

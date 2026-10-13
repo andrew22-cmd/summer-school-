@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:summerschool/core/constants/app_colors.dart';
 import 'package:summerschool/models/spiritual_notebook_model.dart';
+import 'package:summerschool/core/localization/app_localizations.dart';
 
 class SpiritualNotebookTable extends StatelessWidget {
   const SpiritualNotebookTable({
@@ -43,11 +44,11 @@ class SpiritualNotebookTable extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  const SizedBox(
+                  SizedBox(
                     width: 140,
                     child: Text(
-                      'Day',
-                      style: TextStyle(fontWeight: FontWeight.w600),
+                      context.tr('day'),
+                      style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
                   ),
                   for (final col in columns)
@@ -55,7 +56,7 @@ class SpiritualNotebookTable extends StatelessWidget {
                       width: 80,
                       child: Center(
                         child: Text(
-                          col['label']!,
+                          context.tr(col['label']!),
                           style: const TextStyle(fontWeight: FontWeight.w600),
                         ),
                       ),
@@ -84,7 +85,7 @@ class SpiritualNotebookTable extends StatelessWidget {
                         child: Padding(
                           padding: const EdgeInsets.all(12.0),
                           child: Text(
-                            '${day['label']} - ${formatDate(date)}',
+                            '${context.tr(day['label']!)} - ${formatDate(date)}',
                             style: const TextStyle(fontWeight: FontWeight.w600),
                           ),
                         ),

@@ -9,6 +9,7 @@ import 'package:summerschool/models/user_model.dart';
 import 'package:summerschool/constants/user_roles.dart';
 import 'package:summerschool/providers/follow_up_provider.dart';
 import 'package:summerschool/services/follow_up_service.dart';
+import 'package:summerschool/core/localization/app_localizations.dart';
 
 class FollowUpDetailsScreen extends StatefulWidget {
   const FollowUpDetailsScreen({
@@ -44,7 +45,7 @@ class _FollowUpDetailsScreenState extends State<FollowUpDetailsScreen> {
           'yyyy/MM/dd  HH:mm',
         ).format(visit.createdAt);
         final nextFollowUpText = visit.nextFollowUp == null
-            ? 'Not set'
+            ? ctx.tr('not_set')
             : DateFormat('yyyy/MM/dd').format(visit.nextFollowUp!);
 
         Widget detailRow({
@@ -91,7 +92,7 @@ class _FollowUpDetailsScreenState extends State<FollowUpDetailsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Visit Details',
+                    ctx.tr('visit_details'),
                     style: Theme.of(ctx).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.w800,
                     ),
@@ -99,48 +100,48 @@ class _FollowUpDetailsScreenState extends State<FollowUpDetailsScreen> {
                   const SizedBox(height: 14),
                   detailRow(
                     icon: Icons.calendar_month_rounded,
-                    title: 'Visit date',
+                    title: ctx.tr('visit_date'),
                     value:
-                        '$dateText (${FollowUpService.dayName(visit.visitDate)})',
+                        '$dateText (${ctx.tr(FollowUpService.dayName(visit.visitDate))})',
                   ),
                   detailRow(
                     icon: Icons.person_rounded,
-                    title: 'Servant',
+                    title: ctx.tr('servant'),
                     value: visit.servantName,
                   ),
                   detailRow(
                     icon: Icons.verified_user_rounded,
-                    title: 'Responded / Contacted',
-                    value: visit.responded ? 'Yes' : 'No',
+                    title: ctx.tr('responded_contacted'),
+                    value: visit.responded ? ctx.tr('yes') : ctx.tr('no'),
                   ),
                   detailRow(
                     icon: Icons.category_rounded,
-                    title: 'Visit type',
-                    value: visit.visitType,
+                    title: ctx.tr('visit_type'),
+                    value: ctx.tr(visit.visitType),
                   ),
                   detailRow(
                     icon: Icons.short_text_rounded,
-                    title: 'Summary',
+                    title: ctx.tr('summary'),
                     value: visit.summary,
                   ),
                   detailRow(
                     icon: Icons.notes_rounded,
-                    title: 'Notes',
+                    title: ctx.tr('notes'),
                     value: visit.notes,
                   ),
                   detailRow(
                     icon: Icons.favorite_rounded,
-                    title: 'Favorite thing',
+                    title: ctx.tr('favorite_thing'),
                     value: visit.favoriteThing,
                   ),
                   detailRow(
                     icon: Icons.event_available_rounded,
-                    title: 'Next follow-up',
+                    title: ctx.tr('next_follow_up'),
                     value: nextFollowUpText,
                   ),
                   detailRow(
                     icon: Icons.history_rounded,
-                    title: 'Recorded at',
+                    title: ctx.tr('recorded_at'),
                     value: createdAtText,
                   ),
                 ],
@@ -175,7 +176,7 @@ class _FollowUpDetailsScreenState extends State<FollowUpDetailsScreen> {
         return StatefulBuilder(
           builder: (ctx, setInner) {
             return AlertDialog(
-              title: const Text('Add Visit'),
+              title: Text(context.tr('add_visit')),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -192,21 +193,25 @@ class _FollowUpDetailsScreenState extends State<FollowUpDetailsScreen> {
                           );
                           if (picked != null) setInner(() => selected = picked);
                         },
-                        child: const Text('Choose Date'),
+                        child: Text(context.tr('choose_date')),
                       ),
                     ),
                     CheckboxListTile(
                       value: responded,
                       onChanged: (v) => setInner(() => responded = v ?? false),
-                      title: const Text('Responded / Contacted'),
+                      title: Text(context.tr('responded_contacted')),
                     ),
                     TextField(
                       controller: summaryCtrl,
-                      decoration: const InputDecoration(labelText: 'Summary'),
+                      decoration: InputDecoration(
+                        labelText: context.tr('summary'),
+                      ),
                     ),
                     TextField(
                       controller: notesCtrl,
-                      decoration: const InputDecoration(labelText: 'Notes'),
+                      decoration: InputDecoration(
+                        labelText: context.tr('notes'),
+                      ),
                       maxLines: 3,
                     ),
                   ],
@@ -215,10 +220,18 @@ class _FollowUpDetailsScreenState extends State<FollowUpDetailsScreen> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(ctx).pop(),
-                  child: const Text('Cancel'),
+                  child: Text(context.tr('cancel')),
                 ),
                 ElevatedButton(
                   onPressed: () async {
+                    final dialogContext = ctx;
+                    final messenger = ScaffoldMessenger.maybeOf(context);
+                    final successMessage = context.tr('visit_added');
+
+                    if (Navigator.of(dialogContext).canPop()) {
+                      Navigator.of(dialogContext).pop();
+                    }
+
                     try {
                       setState(() => _isSaving = true);
                       await provider.saveVisit(
@@ -236,16 +249,15 @@ class _FollowUpDetailsScreenState extends State<FollowUpDetailsScreen> {
                         favoriteThing: '',
                       );
                       if (!mounted) return;
-                      Navigator.of(ctx).pop();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Visit added'),
+                      messenger?.showSnackBar(
+                        SnackBar(
+                          content: Text(successMessage),
                           backgroundColor: Colors.green,
                         ),
                       );
                     } catch (e) {
                       if (!mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      messenger?.showSnackBar(
                         SnackBar(
                           content: Text('Failed to save: $e'),
                           backgroundColor: Colors.red,
@@ -255,7 +267,7 @@ class _FollowUpDetailsScreenState extends State<FollowUpDetailsScreen> {
                       if (mounted) setState(() => _isSaving = false);
                     }
                   },
-                  child: const Text('Save'),
+                  child: Text(context.tr('save')),
                 ),
               ],
             );
@@ -277,10 +289,10 @@ class _FollowUpDetailsScreenState extends State<FollowUpDetailsScreen> {
     if (user == null ||
         (!auth.isMemberManager && !auth.isMember && !auth.isManager)) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Visit Details')),
+        appBar: AppBar(title: Text(context.tr('visit_details'))),
         body: Center(
           child: Text(
-            'This page is available only to the servants responsible for visits.',
+            context.tr('only_responsible_servants'),
             style: Theme.of(context).textTheme.titleMedium,
             textAlign: TextAlign.center,
           ),
@@ -292,10 +304,10 @@ class _FollowUpDetailsScreenState extends State<FollowUpDetailsScreen> {
         FollowUpService.normalizeStage(user.stage) !=
             FollowUpService.normalizeStage(widget.student.stage)) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Visit Details')),
+        appBar: AppBar(title: Text(context.tr('visit_details'))),
         body: Center(
           child: Text(
-            'You cannot open a student from a different stage than yours.',
+            context.tr('cannot_open_different_stage'),
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.titleMedium,
           ),
@@ -317,7 +329,11 @@ class _FollowUpDetailsScreenState extends State<FollowUpDetailsScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         foregroundColor: AppColors.primary,
-        title: Text(readOnly ? 'Visit Details (Read Only)' : 'Visit Details'),
+        title: Text(
+          readOnly
+              ? context.tr('visit_details_readonly')
+              : context.tr('visit_details'),
+        ),
       ),
       body: SafeArea(
         child: StreamBuilder<List<FollowUpModel>>(
@@ -362,8 +378,8 @@ class _FollowUpDetailsScreenState extends State<FollowUpDetailsScreen> {
                       borderRadius: BorderRadius.circular(20),
                       gradient: LinearGradient(
                         colors: [
-                          AppColors.primary.withOpacity(0.95),
-                          AppColors.primary.withOpacity(0.75),
+                          AppColors.primary.withValues(alpha: 0.95),
+                          AppColors.primary.withValues(alpha: 0.75),
                         ],
                       ),
                     ),
@@ -371,7 +387,7 @@ class _FollowUpDetailsScreenState extends State<FollowUpDetailsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Student: ${widget.student.name}',
+                          '${context.tr('student_label')}${widget.student.name}',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 20,
@@ -380,12 +396,12 @@ class _FollowUpDetailsScreenState extends State<FollowUpDetailsScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Stage: ${widget.student.stage}',
+                          '${context.tr('stage_label')}${widget.student.stage}',
                           style: const TextStyle(color: Colors.white70),
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Responsible servant: $servantName',
+                          '${context.tr('responsible_servant_label')}$servantName',
                           style: const TextStyle(color: Colors.white70),
                         ),
                       ],
@@ -394,19 +410,19 @@ class _FollowUpDetailsScreenState extends State<FollowUpDetailsScreen> {
                   const SizedBox(height: 16),
                   _InfoCard(
                     icon: Icons.calendar_month_rounded,
-                    title: 'Today',
+                    title: context.tr('today_label'),
                     value:
                         '${FollowUpService.dayName(currentDate)} - $formattedDate',
                   ),
                   const SizedBox(height: 12),
                   _InfoCard(
                     icon: Icons.event_repeat_rounded,
-                    title: 'Month start',
+                    title: context.tr('month_start_label'),
                     value: DateFormat('yyyy/MM/dd').format(monthStart),
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Visits in selected month',
+                    context.tr('visits_in_month'),
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w800,
                     ),
@@ -415,7 +431,7 @@ class _FollowUpDetailsScreenState extends State<FollowUpDetailsScreen> {
                   if (visits.isEmpty)
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 24),
-                      child: Text('No visits recorded for this month.'),
+                      child: Text(context.tr('no_visits_in_month')),
                     )
                   else
                     Column(
@@ -445,7 +461,9 @@ class _FollowUpDetailsScreenState extends State<FollowUpDetailsScreen> {
                                       ? v.summary
                                       : (v.notes.isNotEmpty
                                             ? v.notes
-                                            : 'Tap to view details'),
+                                            : context.tr(
+                                                'tap_to_view_details',
+                                              )),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -473,7 +491,7 @@ class _FollowUpDetailsScreenState extends State<FollowUpDetailsScreen> {
                                 );
                               },
                         icon: const Icon(Icons.add_location_alt_rounded),
-                        label: const Text('Add Visit'),
+                        label: Text(context.tr('add_visit')),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
                           foregroundColor: Colors.white,
@@ -515,7 +533,7 @@ class _InfoCard extends StatelessWidget {
         child: Row(
           children: [
             CircleAvatar(
-              backgroundColor: AppColors.primary.withOpacity(0.1),
+              backgroundColor: AppColors.primary.withValues(alpha: 0.1),
               child: Icon(icon, color: AppColors.primary),
             ),
             const SizedBox(width: 12),
