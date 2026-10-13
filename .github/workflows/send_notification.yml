@@ -1,4 +1,4 @@
-﻿name: Send Firebase Cloud Messaging Notification
+name: Send Firebase Cloud Messaging Notification
 
 on:
   workflow_dispatch:
@@ -31,7 +31,7 @@ jobs:
           node-version: 22
 
       - name: Install firebase-admin
-        run: npm install firebase-admin
+        run: npm install firebase-admin@11.11.0
 
       - name: Create service account
         env:
@@ -76,22 +76,15 @@ jobs:
               if (useToken) {
                 message.token = token;
                 console.log('TARGET_MODE: token');
-                console.log('TARGET_TOKEN:', token);
               } else {
                 message.topic = topic;
                 console.log('TARGET_MODE: topic');
-                console.log('TARGET_TOPIC:', topic);
               }
-
-              console.log('SENDING_MESSAGE:', JSON.stringify(message, null, 2));
 
               const response = await admin.messaging().send(message);
               console.log('SUCCESS: Firebase response =', response);
             } catch (e) {
-              console.error('ERROR_NAME:', e?.name || 'UnknownError');
               console.error('ERROR_MESSAGE:', e?.message || String(e));
-              console.error('ERROR_STACK:', e?.stack || 'No stack');
-              console.error('ERROR_FULL:', e);
               process.exit(1);
             }
           }
